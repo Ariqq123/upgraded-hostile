@@ -32,6 +32,9 @@ public class ControlGUI implements Listener {
     private static final int SLOT_ENDERMAN = 33;
     private static final int SLOT_WITCH = 39;
     private static final int SLOT_DEBUG = 41;
+    private static final int SLOT_EVOLUTION = 48;
+    private static final int SLOT_JOCKEY = 49;
+    private static final int SLOT_SNUFF = 50;
 
     public static void open(UpgradedHostile plugin, Player player) {
         Inventory inv = Bukkit.createInventory(null, 54, TITLE);
@@ -57,6 +60,10 @@ public class ControlGUI implements Listener {
         inv.setItem(SLOT_ENDERMAN, createToggleItem(Material.ENDER_PEARL, "Enderman AI", config.getBoolean("enderman.enabled", true)));
         inv.setItem(SLOT_WITCH, createToggleItem(Material.GLASS_BOTTLE, "Witch AI", config.getBoolean("witch.enabled", true)));
         inv.setItem(SLOT_DEBUG, createToggleItem(Material.REDSTONE, "Debug Mode", config.getBoolean("general.debug", false)));
+        
+        inv.setItem(SLOT_EVOLUTION, createToggleItem(Material.NETHER_STAR, "Evolution System", config.getBoolean("general.evolution-enabled", true)));
+        inv.setItem(SLOT_JOCKEY, createToggleItem(Material.SADDLE, "Dynamic Jockeys", config.getBoolean("skeleton.can-dynamic-jockey", true)));
+        inv.setItem(SLOT_SNUFF, createToggleItem(Material.TORCH, "Torch Snuffing", config.getBoolean("zombie.can-snuff-torches", true)));
 
         player.openInventory(inv);
     }
@@ -114,6 +121,18 @@ public class ControlGUI implements Listener {
             toggled = true;
         } else if (slot == SLOT_DEBUG) {
             config.set("general.debug", !config.getBoolean("general.debug", false));
+            toggled = true;
+        } else if (slot == SLOT_EVOLUTION) {
+            config.set("general.evolution-enabled", !config.getBoolean("general.evolution-enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_JOCKEY) {
+            boolean current = config.getBoolean("skeleton.can-dynamic-jockey", true);
+            config.set("skeleton.can-dynamic-jockey", !current);
+            toggled = true;
+        } else if (slot == SLOT_SNUFF) {
+            boolean current = config.getBoolean("zombie.can-snuff-torches", true);
+            config.set("zombie.can-snuff-torches", !current);
+            config.set("skeleton.can-snuff-torches", !current);
             toggled = true;
         }
 

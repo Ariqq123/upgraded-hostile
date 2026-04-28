@@ -11,6 +11,8 @@ general:
   bleed-chance: 0.15
   # Duration of the bleeding effect (20 ticks = 1 second)
   bleed-duration-ticks: 200
+  # Area Evolution: Mobs become smarter in high-kill chunks
+  evolution-enabled: true
 
 # --- Zombie Block Breaking ---
 zombie:
@@ -39,6 +41,8 @@ zombie:
   can-tower: true
   # Can zombies place blocks to bridge gaps?
   can-bridge: true
+  # Can zombies break nearby torches when idle?
+  can-snuff-torches: true
 
 # --- Creeper Stealth & Surprise ---
 creeper:
@@ -72,6 +76,10 @@ skeleton:
   cover-seek-range: 8.0
   # Distance at which skeleton starts strafing when player aims a bow
   strafe-bow-distance: 12.0
+  # Can skeletons seek out and mount nearby spiders?
+  can-dynamic-jockey: true
+  # Can skeletons break nearby torches when idle?
+  can-snuff-torches: true
 
 # --- Spider Ambush Predator ---
 spider:

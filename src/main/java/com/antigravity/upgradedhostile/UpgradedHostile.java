@@ -2,7 +2,9 @@ package com.antigravity.upgradedhostile;
 
 import com.antigravity.upgradedhostile.handlers.*;
 import com.antigravity.upgradedhostile.listeners.BleedListener;
+import com.antigravity.upgradedhostile.listeners.EvolutionListener;
 import com.antigravity.upgradedhostile.managers.BleedManager;
+import com.antigravity.upgradedhostile.managers.EvolutionManager;
 import com.antigravity.upgradedhostile.commands.UHostileCommand;
 import com.antigravity.upgradedhostile.guis.ControlGUI;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -15,12 +17,19 @@ public class UpgradedHostile extends JavaPlugin {
     private BukkitTask dispatcherTask;
     private BleedManager bleedManager;
     private BukkitTask bleedTask;
+    private EvolutionManager evolutionManager;
+    private BukkitTask evolutionCleanupTask;
     private boolean debugMode;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         
+        // Initialize Persistent Managers
+        this.evolutionManager = new EvolutionManager();
+        // Cleanup evolution data every 30 minutes (36000 ticks)
+        this.evolutionCleanupTask = getServer().getScheduler().runTaskTimer(this, evolutionManager::cleanup, 36000L, 36000L);
+
         // Register commands
         getCommand("uhostile").setExecutor(new UHostileCommand(this));
         
@@ -46,6 +55,7 @@ public class UpgradedHostile extends JavaPlugin {
 
         // Register Listeners
         getServer().getPluginManager().registerEvents(new BleedListener(this, bleedManager, config), this);
+        getServer().getPluginManager().registerEvents(new EvolutionListener(evolutionManager, config), this);
         getServer().getPluginManager().registerEvents(new ControlGUI(this), this);
 
         boolean zombieEnabled = config.getBoolean("zombie.enabled", true);
@@ -57,9 +67,9 @@ public class UpgradedHostile extends JavaPlugin {
         boolean witchEnabled = config.getBoolean("witch.enabled", true);
 
         // Create handlers
-        ZombieHandler zombieHandler = new ZombieHandler(this, config, bleedManager);
+        ZombieHandler zombieHandler = new ZombieHandler(this, config, bleedManager, evolutionManager);
         CreeperHandler creeperHandler = new CreeperHandler(config);
-        SkeletonHandler skeletonHandler = new SkeletonHandler(config);
+        SkeletonHandler skeletonHandler = new SkeletonHandler(this, config, evolutionManager);
         SpiderHandler spiderHandler = new SpiderHandler(this, config);
         PhantomHandler phantomHandler = new PhantomHandler(config);
         EndermanHandler endermanHandler = new EndermanHandler(config);
@@ -95,6 +105,9 @@ public class UpgradedHostile extends JavaPlugin {
         }
         if (bleedTask != null) {
             bleedTask.cancel();
+        }
+        if (evolutionCleanupTask != null) {
+            evolutionCleanupTask.cancel();
         }
         getLogger().info("UpgradedHostile has been disabled!");
     }

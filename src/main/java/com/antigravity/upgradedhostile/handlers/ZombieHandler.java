@@ -3,6 +3,7 @@ package com.antigravity.upgradedhostile.handlers;
 import com.antigravity.upgradedhostile.util.MobUtil;
 import com.antigravity.upgradedhostile.UpgradedHostile;
 import com.antigravity.upgradedhostile.managers.BleedManager;
+import com.antigravity.upgradedhostile.managers.EvolutionManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -26,6 +27,7 @@ public class ZombieHandler {
 
     private final JavaPlugin plugin;
     private final BleedManager bleedManager;
+    private final EvolutionManager evolutionManager;
     private final Map<Location, BlockDamageEntry> blockDamage = new HashMap<>();
     private final int maxDamage;
     private final double detectionRangeSq;
@@ -37,6 +39,7 @@ public class ZombieHandler {
     private final boolean canPickupBlocks;
     private final boolean canTower;
     private final boolean canBridge;
+    private final boolean canSnuffTorches;
 
     // Run cleanup only every N calls to amortize cost
     private int cleanupCounter = 0;
@@ -46,9 +49,10 @@ public class ZombieHandler {
     private final Map<UUID, Long> towerCooldowns = new HashMap<>();
     private static final long TOWER_COOLDOWN_MS = 1500; // 1.5 seconds between towers
 
-    public ZombieHandler(JavaPlugin plugin, FileConfiguration config, BleedManager bleedManager) {
+    public ZombieHandler(JavaPlugin plugin, FileConfiguration config, BleedManager bleedManager, EvolutionManager evolutionManager) {
         this.plugin = plugin;
         this.bleedManager = bleedManager;
+        this.evolutionManager = evolutionManager;
         this.maxDamage = config.getInt("zombie.break-hits", 10);
         double dr = config.getDouble("zombie.detection-range", 4.0);
         double mr = config.getDouble("zombie.min-range", 1.2);
@@ -62,12 +66,18 @@ public class ZombieHandler {
         this.canPickupBlocks = config.getBoolean("zombie.can-pickup-blocks", true);
         this.canTower = config.getBoolean("zombie.can-tower", true);
         this.canBridge = config.getBoolean("zombie.can-bridge", true);
+        this.canSnuffTorches = config.getBoolean("zombie.can-snuff-torches", true);
     }
 
     public void handle(Zombie zombie) {
         if (!(zombie.getTarget() instanceof Player target)) {
             // Target acquisition: smell blood
             acquireBleedingTarget(zombie);
+            
+            // Sabotage: Torch snuffing if idle
+            if (zombie.getTarget() == null && canSnuffTorches) {
+                attemptTorchSnuff(zombie);
+            }
             return;
         }
 
@@ -95,9 +105,13 @@ public class ZombieHandler {
             double distSq2D = Math.pow(target.getLocation().getX() - zombie.getLocation().getX(), 2) 
                             + Math.pow(target.getLocation().getZ() - zombie.getLocation().getZ(), 2);
 
-            if (canTower && diffY > 1.5 && distSq2D < 4.0) {
+            double evoFactor = evolutionManager.getEvolutionFactor(zombie.getLocation().getChunk());
+            // Smarter zombies (higher evolution) use builder AI more consistently
+            double buildChance = 0.3 + (evoFactor * 0.7);
+
+            if (canTower && diffY > 1.5 && distSq2D < 4.0 && Math.random() < buildChance) {
                 attemptTower(zombie);
-            } else if (canBridge && distSq2D > 1.0) {
+            } else if (canBridge && distSq2D > 1.0 && Math.random() < buildChance) {
                 attemptBridge(zombie, target);
             }
         }
@@ -165,6 +179,27 @@ public class ZombieHandler {
             
             if (plugin instanceof UpgradedHostile) {
                 ((UpgradedHostile) plugin).debug("Zombie bridged gap at " + gapLoc);
+            }
+        }
+    }
+
+    private void attemptTorchSnuff(Zombie zombie) {
+        Location loc = zombie.getLocation();
+        for (int x = -5; x <= 5; x++) {
+            for (int y = -2; y <= 2; y++) {
+                for (int z = -5; z <= 5; z++) {
+                    Block b = loc.clone().add(x, y, z).getBlock();
+                    if (b.getType() == Material.TORCH || b.getType() == Material.WALL_TORCH) {
+                        if (zombie.getLocation().distanceSquared(b.getLocation()) < 2.25) { // 1.5 blocks
+                            b.breakNaturally();
+                            zombie.swingMainHand();
+                            b.getWorld().playSound(b.getLocation(), b.getBlockData().getSoundGroup().getBreakSound(), 1.0f, 1.0f);
+                        } else {
+                            zombie.getPathfinder().moveTo(b.getLocation());
+                        }
+                        return; // Only target one torch at a time
+                    }
+                }
             }
         }
     }
