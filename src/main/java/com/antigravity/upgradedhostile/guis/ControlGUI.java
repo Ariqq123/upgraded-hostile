@@ -24,20 +24,39 @@ public class ControlGUI implements Listener {
         this.plugin = plugin;
     }
 
+    private static final int SLOT_ZOMBIE = 13;
+    private static final int SLOT_CREEPER = 21;
+    private static final int SLOT_SKELETON = 23;
+    private static final int SLOT_SPIDER = 29;
+    private static final int SLOT_PHANTOM = 31;
+    private static final int SLOT_ENDERMAN = 33;
+    private static final int SLOT_WITCH = 39;
+    private static final int SLOT_DEBUG = 41;
+
     public static void open(UpgradedHostile plugin, Player player) {
-        Inventory inv = Bukkit.createInventory(null, 9, TITLE);
+        Inventory inv = Bukkit.createInventory(null, 54, TITLE);
         FileConfiguration config = plugin.getConfig();
 
-        inv.setItem(0, createToggleItem(Material.ROTTEN_FLESH, "Zombie AI", config.getBoolean("zombie.enabled", true)));
-        inv.setItem(1, createToggleItem(Material.GUNPOWDER, "Creeper AI", config.getBoolean("creeper.enabled", true)));
-        inv.setItem(2, createToggleItem(Material.BONE, "Skeleton AI", config.getBoolean("skeleton.enabled", true)));
-        inv.setItem(3, createToggleItem(Material.SPIDER_EYE, "Spider AI", config.getBoolean("spider.enabled", true)));
-        inv.setItem(4, createToggleItem(Material.PHANTOM_MEMBRANE, "Phantom AI", config.getBoolean("phantom.enabled", true)));
-        inv.setItem(5, createToggleItem(Material.ENDER_PEARL, "Enderman AI", config.getBoolean("enderman.enabled", true)));
-        inv.setItem(6, createToggleItem(Material.GLASS_BOTTLE, "Witch AI", config.getBoolean("witch.enabled", true)));
-        
-        // Use a generic toggle for Bleeding if we want, or general debug. Let's do debug since it's in general
-        inv.setItem(8, createToggleItem(Material.REDSTONE, "Debug Mode", config.getBoolean("general.debug", false)));
+        // Add sleek glass pane background
+        ItemStack filler = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta fillerMeta = filler.getItemMeta();
+        if (fillerMeta != null) {
+            fillerMeta.setDisplayName(" ");
+            filler.setItemMeta(fillerMeta);
+        }
+        for (int i = 0; i < 54; i++) {
+            inv.setItem(i, filler);
+        }
+
+        // Place items in a Diamond/Star layout
+        inv.setItem(SLOT_ZOMBIE, createToggleItem(Material.ROTTEN_FLESH, "Zombie AI", config.getBoolean("zombie.enabled", true)));
+        inv.setItem(SLOT_CREEPER, createToggleItem(Material.GUNPOWDER, "Creeper AI", config.getBoolean("creeper.enabled", true)));
+        inv.setItem(SLOT_SKELETON, createToggleItem(Material.BONE, "Skeleton AI", config.getBoolean("skeleton.enabled", true)));
+        inv.setItem(SLOT_SPIDER, createToggleItem(Material.SPIDER_EYE, "Spider AI", config.getBoolean("spider.enabled", true)));
+        inv.setItem(SLOT_PHANTOM, createToggleItem(Material.PHANTOM_MEMBRANE, "Phantom AI", config.getBoolean("phantom.enabled", true)));
+        inv.setItem(SLOT_ENDERMAN, createToggleItem(Material.ENDER_PEARL, "Enderman AI", config.getBoolean("enderman.enabled", true)));
+        inv.setItem(SLOT_WITCH, createToggleItem(Material.GLASS_BOTTLE, "Witch AI", config.getBoolean("witch.enabled", true)));
+        inv.setItem(SLOT_DEBUG, createToggleItem(Material.REDSTONE, "Debug Mode", config.getBoolean("general.debug", false)));
 
         player.openInventory(inv);
     }
@@ -67,44 +86,35 @@ public class ControlGUI implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= 9) return;
+        if (slot < 0 || slot >= 54) return;
 
         FileConfiguration config = plugin.getConfig();
         boolean toggled = false;
 
-        switch (slot) {
-            case 0:
-                config.set("zombie.enabled", !config.getBoolean("zombie.enabled", true));
-                toggled = true;
-                break;
-            case 1:
-                config.set("creeper.enabled", !config.getBoolean("creeper.enabled", true));
-                toggled = true;
-                break;
-            case 2:
-                config.set("skeleton.enabled", !config.getBoolean("skeleton.enabled", true));
-                toggled = true;
-                break;
-            case 3:
-                config.set("spider.enabled", !config.getBoolean("spider.enabled", true));
-                toggled = true;
-                break;
-            case 4:
-                config.set("phantom.enabled", !config.getBoolean("phantom.enabled", true));
-                toggled = true;
-                break;
-            case 5:
-                config.set("enderman.enabled", !config.getBoolean("enderman.enabled", true));
-                toggled = true;
-                break;
-            case 6:
-                config.set("witch.enabled", !config.getBoolean("witch.enabled", true));
-                toggled = true;
-                break;
-            case 8:
-                config.set("general.debug", !config.getBoolean("general.debug", false));
-                toggled = true;
-                break;
+        if (slot == SLOT_ZOMBIE) {
+            config.set("zombie.enabled", !config.getBoolean("zombie.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_CREEPER) {
+            config.set("creeper.enabled", !config.getBoolean("creeper.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_SKELETON) {
+            config.set("skeleton.enabled", !config.getBoolean("skeleton.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_SPIDER) {
+            config.set("spider.enabled", !config.getBoolean("spider.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_PHANTOM) {
+            config.set("phantom.enabled", !config.getBoolean("phantom.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_ENDERMAN) {
+            config.set("enderman.enabled", !config.getBoolean("enderman.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_WITCH) {
+            config.set("witch.enabled", !config.getBoolean("witch.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_DEBUG) {
+            config.set("general.debug", !config.getBoolean("general.debug", false));
+            toggled = true;
         }
 
         if (toggled) {
