@@ -4,3 +4,13 @@ main: com.antigravity.upgradedhostile.UpgradedHostile
 api-version: 1.20
 author: Antigravity
 description: Makes hostile mobs smarter. Zombies can break blocks, and Creepers have surprise attack behaviors.
+
+commands:
+  uhostile:
+    description: Main command for UpgradedHostile
+    aliases: [uh]
+    permission: upgradedhostile.admin
+
+permissions:
+  upgradedhostile.admin:
+    default: op

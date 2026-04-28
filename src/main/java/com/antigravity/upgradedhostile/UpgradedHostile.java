@@ -3,7 +3,10 @@ package com.antigravity.upgradedhostile;
 import com.antigravity.upgradedhostile.handlers.*;
 import com.antigravity.upgradedhostile.listeners.BleedListener;
 import com.antigravity.upgradedhostile.managers.BleedManager;
+import com.antigravity.upgradedhostile.commands.UHostileCommand;
+import com.antigravity.upgradedhostile.guis.ControlGUI;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -17,6 +20,22 @@ public class UpgradedHostile extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        
+        // Register commands
+        getCommand("uhostile").setExecutor(new UHostileCommand(this));
+        
+        reloadPlugin();
+    }
+
+    public void reloadPlugin() {
+        // Cleanup old tasks
+        if (dispatcherTask != null) dispatcherTask.cancel();
+        if (bleedTask != null) bleedTask.cancel();
+        
+        // Unregister old listeners to prevent duplicates
+        HandlerList.unregisterAll(this);
+        
+        reloadConfig();
         FileConfiguration config = getConfig();
         
         this.debugMode = config.getBoolean("general.debug", false);
@@ -27,6 +46,7 @@ public class UpgradedHostile extends JavaPlugin {
 
         // Register Listeners
         getServer().getPluginManager().registerEvents(new BleedListener(this, bleedManager, config), this);
+        getServer().getPluginManager().registerEvents(new ControlGUI(this), this);
 
         boolean zombieEnabled = config.getBoolean("zombie.enabled", true);
         boolean creeperEnabled = config.getBoolean("creeper.enabled", true);
