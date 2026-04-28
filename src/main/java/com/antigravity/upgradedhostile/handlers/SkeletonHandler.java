@@ -36,6 +36,11 @@ public class SkeletonHandler {
     private final boolean canDynamicJockey;
     private final boolean canSnuffTorches;
 
+    private final Map<UUID, Long> torchSnuffCooldowns = new HashMap<>();
+    private static final long TORCH_SNUFF_COOLDOWN_MS = 10_000L;
+    private final Map<UUID, Long> jockeyCooldowns = new HashMap<>();
+    private static final long JOCKEY_COOLDOWN_MS = 5_000L;
+
     public SkeletonHandler(JavaPlugin plugin, FileConfiguration config, EvolutionManager evolutionManager) {
         this.plugin = plugin;
         this.evolutionManager = evolutionManager;
@@ -82,7 +87,7 @@ public class SkeletonHandler {
         }
         
         // Also try mounting spider if target exists but currently on foot
-        if (canDynamicJockey && !skeleton.isInsideVehicle() && Math.random() < 0.2) {
+        if (canDynamicJockey && !skeleton.isInsideVehicle() && Math.random() < 0.03) {
             attemptJockey(skeleton);
         }
     }
@@ -97,6 +102,8 @@ public class SkeletonHandler {
             Map.Entry<UUID, Skeleton> entry = it.next();
             if (!entry.getValue().isValid()) {
                 strafeDirection.remove(entry.getKey()); // Fix #6: clean both maps
+                torchSnuffCooldowns.remove(entry.getKey());
+                jockeyCooldowns.remove(entry.getKey());
                 it.remove();
             }
         }
@@ -163,6 +170,11 @@ public class SkeletonHandler {
     }
 
     private void attemptJockey(Skeleton skeleton) {
+        UUID id = skeleton.getUniqueId();
+        long now = System.currentTimeMillis();
+        if (now - jockeyCooldowns.getOrDefault(id, 0L) < JOCKEY_COOLDOWN_MS) return;
+        jockeyCooldowns.put(id, now);
+
         for (Entity nearby : skeleton.getNearbyEntities(10, 5, 10)) {
             if (nearby instanceof Spider spider && spider.getPassengers().isEmpty()) {
                 if (skeleton.getLocation().distanceSquared(spider.getLocation()) < 4.0) {
@@ -176,6 +188,11 @@ public class SkeletonHandler {
     }
 
     private void attemptTorchSnuff(Skeleton skeleton) {
+        UUID id = skeleton.getUniqueId();
+        long now = System.currentTimeMillis();
+        if (now - torchSnuffCooldowns.getOrDefault(id, 0L) < TORCH_SNUFF_COOLDOWN_MS) return;
+        torchSnuffCooldowns.put(id, now);
+
         Location loc = skeleton.getLocation();
         for (int x = -5; x <= 5; x++) {
             for (int y = -2; y <= 2; y++) {

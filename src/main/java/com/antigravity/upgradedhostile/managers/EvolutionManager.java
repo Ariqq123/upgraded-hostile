@@ -1,6 +1,11 @@
 package com.antigravity.upgradedhostile.managers;
 
 import org.bukkit.Chunk;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +40,47 @@ public class EvolutionManager {
     public void cleanup() {
         long now = System.currentTimeMillis();
         chunkData.values().removeIf(data -> now - data.lastKillTime > FLUSH_THRESHOLD_MS);
+    }
+
+    public void load(File file) {
+        if (!file.exists()) return;
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        ConfigurationSection section = config.getConfigurationSection("data");
+        if (section == null) return;
+
+        long now = System.currentTimeMillis();
+        for (String keyStr : section.getKeys(false)) {
+            String[] parts = keyStr.split(":");
+            if (parts.length != 3) continue;
+
+            int kills = section.getInt(keyStr + ".kills");
+            long lastKillTime = section.getLong(keyStr + ".time");
+
+            if (now - lastKillTime < FLUSH_THRESHOLD_MS) {
+                chunkData.put(new ChunkKey(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2])), 
+                              new EvolutionData(kills, lastKillTime));
+            }
+        }
+    }
+
+    public void save(File file) {
+        YamlConfiguration config = new YamlConfiguration();
+        ConfigurationSection section = config.createSection("data");
+
+        for (Map.Entry<ChunkKey, EvolutionData> entry : chunkData.entrySet()) {
+            ChunkKey key = entry.getKey();
+            EvolutionData data = entry.getValue();
+            String keyStr = key.world + ":" + key.x + ":" + key.z;
+            section.set(keyStr + ".kills", data.kills);
+            section.set(keyStr + ".time", data.lastKillTime);
+        }
+
+        try {
+            config.save(file);
+        } catch (IOException e) {
+            // Use silent fail or logger if available, but for now e.printStackTrace
+            e.printStackTrace();
+        }
     }
 
     private static class EvolutionData {

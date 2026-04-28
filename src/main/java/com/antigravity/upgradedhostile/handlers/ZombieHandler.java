@@ -49,6 +49,10 @@ public class ZombieHandler {
     private final Map<UUID, Long> towerCooldowns = new HashMap<>();
     private static final long TOWER_COOLDOWN_MS = 1500; // 1.5 seconds between towers
 
+    // Torch snuff cooldown: 10 second gap between scans per mob
+    private final Map<UUID, Long> torchSnuffCooldowns = new HashMap<>();
+    private static final long TORCH_SNUFF_COOLDOWN_MS = 10_000L;
+
     public ZombieHandler(JavaPlugin plugin, FileConfiguration config, BleedManager bleedManager, EvolutionManager evolutionManager) {
         this.plugin = plugin;
         this.bleedManager = bleedManager;
@@ -184,6 +188,11 @@ public class ZombieHandler {
     }
 
     private void attemptTorchSnuff(Zombie zombie) {
+        UUID id = zombie.getUniqueId();
+        long now = System.currentTimeMillis();
+        if (now - torchSnuffCooldowns.getOrDefault(id, 0L) < TORCH_SNUFF_COOLDOWN_MS) return;
+        torchSnuffCooldowns.put(id, now);
+
         Location loc = zombie.getLocation();
         for (int x = -5; x <= 5; x++) {
             for (int y = -2; y <= 2; y++) {
@@ -220,6 +229,8 @@ public class ZombieHandler {
 
         // Clean tower cooldowns for dead zombies
         towerCooldowns.entrySet().removeIf(e -> now - e.getValue() > TOWER_COOLDOWN_MS * 2);
+        // Clean torch-snuff cooldowns
+        torchSnuffCooldowns.entrySet().removeIf(e -> now - e.getValue() > TORCH_SNUFF_COOLDOWN_MS * 2);
     }
 
     private void attemptBreakBlock(Zombie zombie, Player target) {

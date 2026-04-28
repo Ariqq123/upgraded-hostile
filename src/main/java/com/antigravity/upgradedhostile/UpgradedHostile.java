@@ -12,6 +12,8 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.File;
+
 public class UpgradedHostile extends JavaPlugin {
 
     private BukkitTask dispatcherTask;
@@ -19,6 +21,7 @@ public class UpgradedHostile extends JavaPlugin {
     private BukkitTask bleedTask;
     private EvolutionManager evolutionManager;
     private BukkitTask evolutionCleanupTask;
+    private BukkitTask evolutionSaveTask;
     private boolean debugMode;
 
     @Override
@@ -27,8 +30,13 @@ public class UpgradedHostile extends JavaPlugin {
         
         // Initialize Persistent Managers
         this.evolutionManager = new EvolutionManager();
+        File evoFile = new File(getDataFolder(), "evolution_data.yml");
+        this.evolutionManager.load(evoFile);
+
         // Cleanup evolution data every 30 minutes (36000 ticks)
         this.evolutionCleanupTask = getServer().getScheduler().runTaskTimer(this, evolutionManager::cleanup, 36000L, 36000L);
+        // Periodic Save every 10 minutes (12000 ticks)
+        this.evolutionSaveTask = getServer().getScheduler().runTaskTimerAsynchronously(this, () -> evolutionManager.save(evoFile), 12000L, 12000L);
 
         // Register commands
         getCommand("uhostile").setExecutor(new UHostileCommand(this));
@@ -55,7 +63,7 @@ public class UpgradedHostile extends JavaPlugin {
 
         // Register Listeners
         getServer().getPluginManager().registerEvents(new BleedListener(this, bleedManager, config), this);
-        getServer().getPluginManager().registerEvents(new EvolutionListener(evolutionManager, config), this);
+        getServer().getPluginManager().registerEvents(new EvolutionListener(evolutionManager, this), this);
         getServer().getPluginManager().registerEvents(new ControlGUI(this), this);
 
         boolean zombieEnabled = config.getBoolean("zombie.enabled", true);
@@ -108,6 +116,12 @@ public class UpgradedHostile extends JavaPlugin {
         }
         if (evolutionCleanupTask != null) {
             evolutionCleanupTask.cancel();
+        }
+        if (evolutionSaveTask != null) {
+            evolutionSaveTask.cancel();
+        }
+        if (evolutionManager != null) {
+            evolutionManager.save(new File(getDataFolder(), "evolution_data.yml"));
         }
         getLogger().info("UpgradedHostile has been disabled!");
     }
