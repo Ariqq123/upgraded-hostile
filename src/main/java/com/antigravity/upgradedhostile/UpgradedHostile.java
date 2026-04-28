@@ -12,18 +12,21 @@ public class UpgradedHostile extends JavaPlugin {
     private BukkitTask dispatcherTask;
     private BleedManager bleedManager;
     private BukkitTask bleedTask;
+    private boolean debugMode;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         FileConfiguration config = getConfig();
+        
+        this.debugMode = config.getBoolean("general.debug", false);
 
         // Initialize Managers
         this.bleedManager = new BleedManager();
         this.bleedTask = this.bleedManager.runTaskTimer(this, 20L, 5L);
 
         // Register Listeners
-        getServer().getPluginManager().registerEvents(new BleedListener(bleedManager, config), this);
+        getServer().getPluginManager().registerEvents(new BleedListener(this, bleedManager, config), this);
 
         boolean zombieEnabled = config.getBoolean("zombie.enabled", true);
         boolean creeperEnabled = config.getBoolean("creeper.enabled", true);
@@ -44,7 +47,7 @@ public class UpgradedHostile extends JavaPlugin {
 
         // Single consolidated dispatcher — one entity scan for all mob types
         MobAIDispatcher dispatcher = new MobAIDispatcher(
-                zombieHandler, creeperHandler, skeletonHandler,
+                this, zombieHandler, creeperHandler, skeletonHandler,
                 spiderHandler, phantomHandler, endermanHandler, witchHandler,
                 zombieEnabled, creeperEnabled, skeletonEnabled,
                 spiderEnabled, phantomEnabled, endermanEnabled, witchEnabled
@@ -74,5 +77,11 @@ public class UpgradedHostile extends JavaPlugin {
             bleedTask.cancel();
         }
         getLogger().info("UpgradedHostile has been disabled!");
+    }
+
+    public void debug(String message) {
+        if (debugMode) {
+            getLogger().info("[DEBUG] " + message);
+        }
     }
 }

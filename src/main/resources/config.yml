@@ -5,6 +5,8 @@
 # Set 'enabled: false' in general section to disable bleeding effects.
 
 general:
+  # Enable debug logging in the console
+  debug: false
   # Chance for a player to start bleeding when hit by a mob
   bleed-chance: 0.15
   # Duration of the bleeding effect (20 ticks = 1 second)

@@ -1,5 +1,6 @@
 package com.antigravity.upgradedhostile.listeners;
 
+import com.antigravity.upgradedhostile.UpgradedHostile;
 import com.antigravity.upgradedhostile.managers.BleedManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Monster;
@@ -13,12 +14,14 @@ import java.util.Random;
 
 public class BleedListener implements Listener {
 
+    private final UpgradedHostile plugin;
     private final BleedManager bleedManager;
     private final double bleedChance;
     private final long bleedDuration;
     private final Random random = new Random();
 
-    public BleedListener(BleedManager bleedManager, FileConfiguration config) {
+    public BleedListener(UpgradedHostile plugin, BleedManager bleedManager, FileConfiguration config) {
+        this.plugin = plugin;
         this.bleedManager = bleedManager;
         this.bleedChance = config.getDouble("general.bleed-chance", 0.15);
         this.bleedDuration = config.getLong("general.bleed-duration-ticks", 200);
@@ -37,6 +40,7 @@ public class BleedListener implements Listener {
 
         if (random.nextDouble() < bleedChance) {
             bleedManager.startBleeding(player, bleedDuration);
+            plugin.debug(player.getName() + " started bleeding after being hit by " + event.getDamager().getType().name());
         }
     }
 }

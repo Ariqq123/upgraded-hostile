@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class MobAIDispatcher extends BukkitRunnable {
 
+    private final UpgradedHostile plugin;
     private final ZombieHandler zombieHandler;
     private final CreeperHandler creeperHandler;
     private final SkeletonHandler skeletonHandler;
@@ -41,6 +42,7 @@ public class MobAIDispatcher extends BukkitRunnable {
     private static final int CLEANUP_RATE = 10; // Every 10th cycle = every 50 ticks
 
     public MobAIDispatcher(
+            UpgradedHostile plugin,
             ZombieHandler zombieHandler,
             CreeperHandler creeperHandler,
             SkeletonHandler skeletonHandler,
@@ -56,6 +58,7 @@ public class MobAIDispatcher extends BukkitRunnable {
             boolean endermanEnabled,
             boolean witchEnabled
     ) {
+        this.plugin = plugin;
         this.zombieHandler = zombieHandler;
         this.creeperHandler = creeperHandler;
         this.skeletonHandler = skeletonHandler;
@@ -74,6 +77,8 @@ public class MobAIDispatcher extends BukkitRunnable {
 
     @Override
     public void run() {
+        long startTime = System.nanoTime();
+        
         tickCount++;
         boolean isSlowTick = (tickCount % SLOW_RATE == 0);
 
@@ -120,6 +125,11 @@ public class MobAIDispatcher extends BukkitRunnable {
             if (phantomEnabled) phantomHandler.cleanup();
             if (endermanEnabled) endermanHandler.cleanup();
             if (witchEnabled) witchHandler.cleanup();
+        }
+
+        long endTime = System.nanoTime();
+        if (tickCount % 20 == 0) { // Log every 20 executions (approx 5 seconds)
+            plugin.debug("MobAIDispatcher cycle completed in " + ((endTime - startTime) / 1_000_000.0) + "ms");
         }
     }
 }

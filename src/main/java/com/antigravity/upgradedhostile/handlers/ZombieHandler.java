@@ -1,6 +1,7 @@
 package com.antigravity.upgradedhostile.handlers;
 
 import com.antigravity.upgradedhostile.util.MobUtil;
+import com.antigravity.upgradedhostile.UpgradedHostile;
 import com.antigravity.upgradedhostile.managers.BleedManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -82,6 +83,9 @@ public class ZombieHandler {
             if (bleedManager.isBleeding(player.getUniqueId())) {
                 if (MobUtil.distanceSquared(zombie, player) < smellBloodRangeSq) {
                     zombie.setTarget(player);
+                    if (plugin instanceof UpgradedHostile) {
+                        ((UpgradedHostile) plugin).debug("Zombie at " + zombie.getLocation().getBlockX() + ", " + zombie.getLocation().getBlockZ() + " acquired bleeding target " + player.getName());
+                    }
                     return;
                 }
             }
