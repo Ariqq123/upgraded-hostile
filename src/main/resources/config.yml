@@ -1,0 +1,101 @@
+# ========================
+# UpgradedHostile Config
+# ========================
+# Set 'enabled: false' on any mob section to disable its AI.
+
+# --- Zombie Block Breaking ---
+zombie:
+  enabled: true
+  # How many hits before a block breaks (each hit = 1 task tick)
+  break-hits: 10
+  # How often the zombie task runs (in ticks, 20 ticks = 1 second)
+  check-interval-ticks: 10
+  # Max distance to player before zombie tries to break blocks
+  detection-range: 4.0
+  # Min distance — below this the zombie can already melee, no need to break
+  min-range: 1.2
+  # Time in milliseconds before a partially-damaged block resets (zombie died/left)
+  stale-timeout-ms: 10000
+
+# --- Creeper Stealth & Surprise ---
+creeper:
+  enabled: true
+  # How often the creeper task runs (in ticks)
+  check-interval-ticks: 5
+  # Speed when player IS looking at the creeper (normal is 0.25)
+  slow-speed: 0.2
+  # Speed when player is NOT looking (stalking speed)
+  fast-speed: 0.4
+  # Default speed to reset to when idle
+  normal-speed: 0.25
+  # Fuse ticks for surprise attack (default vanilla is 30)
+  surprise-fuse-ticks: 10
+  # Normal fuse ticks (reset value)
+  normal-fuse-ticks: 30
+  # Distance threshold to trigger surprise ignition
+  surprise-range: 2.5
+  # Dot product threshold for "player is looking at creeper" (0.7 ≈ 45° FOV)
+  looking-at-threshold: 0.7
+
+# --- Skeleton Tactical Shooter ---
+skeleton:
+  enabled: true
+  check-interval-ticks: 5
+  # Speed when strafing to dodge arrows
+  strafe-speed: 0.35
+  # Normal speed to reset to
+  normal-speed: 0.25
+  # Max distance to seek cover from player
+  cover-seek-range: 8.0
+  # Distance at which skeleton starts strafing when player aims a bow
+  strafe-bow-distance: 12.0
+
+# --- Spider Ambush Predator ---
+spider:
+  enabled: true
+  check-interval-ticks: 10
+  # Max distance for leap attacks
+  leap-range: 6.0
+  # Velocity multiplier for leap attacks
+  leap-velocity: 1.2
+  # Max vertical distance for ceiling drop ambush
+  ceiling-drop-range: 4.0
+  # Health threshold below which spiders place cobwebs when fleeing
+  web-health-threshold: 8.0
+  # Whether spiders can place temporary cobwebs
+  enable-web-trap: true
+
+# --- Phantom Dive Bomber ---
+phantom:
+  enabled: true
+  check-interval-ticks: 5
+  # Speed multiplier during dive when player isn't looking up
+  speed-boost-multiplier: 1.5
+  # Number of hits before a phantom breaks off its attack
+  persistence-hits: 3
+  # Maximum velocity magnitude to prevent compounding speed (#5)
+  max-velocity: 2.0
+
+# --- Enderman Strategic Teleporter ---
+enderman:
+  enabled: true
+  check-interval-ticks: 10
+  # Max distance for flank teleport attempts
+  flank-range: 10.0
+  # Distance within which enderman may place blocks to obstruct
+  block-place-range: 3.0
+  # Whether endermen can place their held block to obstruct players
+  enable-block-weaponization: true
+
+# --- Witch Combat Alchemist ---
+witch:
+  enabled: true
+  check-interval-ticks: 10
+  # Distance threshold — witch runs away if player is closer than this
+  kite-distance: 8.0
+  # Speed when retreating from player
+  kite-speed: 0.35
+  # Normal speed to reset to
+  normal-speed: 0.25
+  # Health threshold below which witch prioritizes self-healing
+  heal-health-threshold: 13.0

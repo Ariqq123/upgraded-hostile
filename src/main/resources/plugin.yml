@@ -1,0 +1,6 @@
+name: UpgradedHostile
+version: 1.0.0
+main: com.antigravity.upgradedhostile.UpgradedHostile
+api-version: 1.20
+author: Antigravity
+description: Makes hostile mobs smarter. Zombies can break blocks, and Creepers have surprise attack behaviors.
