@@ -32,6 +32,13 @@ zombie:
   blood-smell-speed: 0.35
   # Normal speed to reset to
   normal-speed: 0.23
+  # --- Builder AI ---
+  # Can zombies pick up broken blocks?
+  can-pickup-blocks: true
+  # Can zombies use blocks to tower up to players?
+  can-tower: true
+  # Can zombies place blocks to bridge gaps?
+  can-bridge: true
 
 # --- Creeper Stealth & Surprise ---
 creeper:

@@ -9,9 +9,11 @@ import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
@@ -31,6 +33,9 @@ public class ZombieHandler {
     private final double smellBloodRangeSq;
     private final double smellBloodSpeed;
     private final double normalSpeed;
+    private final boolean canPickupBlocks;
+    private final boolean canTower;
+    private final boolean canBridge;
 
     // Run cleanup only every N calls to amortize cost
     private int cleanupCounter = 0;
@@ -49,6 +54,9 @@ public class ZombieHandler {
         this.smellBloodRangeSq = sbr * sbr;
         this.smellBloodSpeed = config.getDouble("zombie.blood-smell-speed", 0.35);
         this.normalSpeed = config.getDouble("zombie.normal-speed", 0.23);
+        this.canPickupBlocks = config.getBoolean("zombie.can-pickup-blocks", true);
+        this.canTower = config.getBoolean("zombie.can-tower", true);
+        this.canBridge = config.getBoolean("zombie.can-bridge", true);
     }
 
     public void handle(Zombie zombie) {
@@ -74,6 +82,20 @@ public class ZombieHandler {
         if (distSq < detectionRangeSq && distSq > minRangeSq) {
             attemptBreakBlock(zombie, target);
         }
+
+        // Builder AI
+        ItemStack offHand = zombie.getEquipment().getItemInOffHand();
+        if (offHand != null && offHand.getType().isBlock()) {
+            double diffY = target.getLocation().getY() - zombie.getLocation().getY();
+            double distSq2D = Math.pow(target.getLocation().getX() - zombie.getLocation().getX(), 2) 
+                            + Math.pow(target.getLocation().getZ() - zombie.getLocation().getZ(), 2);
+
+            if (canTower && diffY > 1.5 && distSq2D < 4.0) {
+                attemptTower(zombie);
+            } else if (canBridge && distSq2D > 1.0) {
+                attemptBridge(zombie, target);
+            }
+        }
     }
 
     private void acquireBleedingTarget(Zombie zombie) {
@@ -88,6 +110,51 @@ public class ZombieHandler {
                     }
                     return;
                 }
+            }
+        }
+    }
+
+    private void attemptTower(Zombie zombie) {
+        if (zombie.getVelocity().getY() < 0.1) {
+            zombie.setVelocity(zombie.getVelocity().setY(0.42));
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (!zombie.isValid()) return;
+                ItemStack offHand = zombie.getEquipment().getItemInOffHand();
+                if (offHand == null || !offHand.getType().isBlock()) return;
+
+                Block placeBlock = zombie.getLocation().getBlock();
+                if (placeBlock.getType().isAir()) {
+                    placeBlock.setType(offHand.getType());
+                    zombie.getEquipment().setItemInOffHand(null);
+                    zombie.getWorld().playSound(placeBlock.getLocation(), placeBlock.getBlockData().getSoundGroup().getPlaceSound(), 1.0f, 1.0f);
+                    
+                    if (plugin instanceof UpgradedHostile) {
+                        ((UpgradedHostile) plugin).debug("Zombie towered up at " + placeBlock.getLocation());
+                    }
+                }
+            }, 8L);
+        }
+    }
+
+    private void attemptBridge(Zombie zombie, Player target) {
+        Vector dir = target.getLocation().toVector().subtract(zombie.getLocation().toVector()).setY(0);
+        if (dir.lengthSquared() < 0.1) return;
+        dir.normalize();
+
+        Location gapLoc = zombie.getLocation().add(dir).subtract(0, 1, 0);
+        Block gapBlock = gapLoc.getBlock();
+        Block belowGap = gapBlock.getRelative(BlockFace.DOWN);
+
+        if (gapBlock.getType().isAir() && belowGap.getType().isAir() && zombie.getLocation().subtract(0, 1, 0).getBlock().getType().isSolid()) {
+            ItemStack offHand = zombie.getEquipment().getItemInOffHand();
+            if (offHand == null || !offHand.getType().isBlock()) return;
+
+            gapBlock.setType(offHand.getType());
+            zombie.getEquipment().setItemInOffHand(null);
+            zombie.getWorld().playSound(gapLoc, gapBlock.getBlockData().getSoundGroup().getPlaceSound(), 1.0f, 1.0f);
+            
+            if (plugin instanceof UpgradedHostile) {
+                ((UpgradedHostile) plugin).debug("Zombie bridged gap at " + gapLoc);
             }
         }
     }
@@ -126,7 +193,7 @@ public class ZombieHandler {
     private boolean tryDamage(Block block, Zombie zombie) {
         if (!isBreakable(block)) return false;
 
-        damageBlock(block);
+        damageBlock(block, zombie);
         zombie.swingMainHand();
         block.getWorld().playSound(
                 block.getLocation(),
@@ -149,14 +216,26 @@ public class ZombieHandler {
                 && type != Material.REPEATING_COMMAND_BLOCK;
     }
 
-    private void damageBlock(Block block) {
+    private void damageBlock(Block block, Zombie zombie) {
         Location loc = block.getLocation();
         BlockDamageEntry entry = blockDamage.getOrDefault(loc, new BlockDamageEntry(0));
         entry.damage++;
         entry.lastHitTime = System.currentTimeMillis();
 
         if (entry.damage >= maxDamage) {
-            block.breakNaturally();
+            Material type = block.getType();
+            ItemStack offHand = zombie.getEquipment().getItemInOffHand();
+            
+            if (canPickupBlocks && (offHand == null || offHand.getType().isAir())) {
+                zombie.getEquipment().setItemInOffHand(new ItemStack(type));
+                block.setType(Material.AIR);
+                if (plugin instanceof UpgradedHostile) {
+                    ((UpgradedHostile) plugin).debug("Zombie picked up block " + type.name());
+                }
+            } else {
+                block.breakNaturally();
+            }
+            
             blockDamage.remove(loc);
             sendBlockDamageToNearby(loc, -1);
         } else {
