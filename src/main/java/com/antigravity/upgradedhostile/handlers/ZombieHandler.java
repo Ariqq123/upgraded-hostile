@@ -20,6 +20,7 @@ import org.bukkit.util.Vector;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 
 public class ZombieHandler {
 
@@ -40,6 +41,10 @@ public class ZombieHandler {
     // Run cleanup only every N calls to amortize cost
     private int cleanupCounter = 0;
     private static final int CLEANUP_INTERVAL = 20;
+
+    // Tower cooldown: prevent spam-jumping
+    private final Map<UUID, Long> towerCooldowns = new HashMap<>();
+    private static final long TOWER_COOLDOWN_MS = 1500; // 1.5 seconds between towers
 
     public ZombieHandler(JavaPlugin plugin, FileConfiguration config, BleedManager bleedManager) {
         this.plugin = plugin;
@@ -115,7 +120,12 @@ public class ZombieHandler {
     }
 
     private void attemptTower(Zombie zombie) {
+        long now = System.currentTimeMillis();
+        Long lastTower = towerCooldowns.get(zombie.getUniqueId());
+        if (lastTower != null && now - lastTower < TOWER_COOLDOWN_MS) return;
+
         if (zombie.getVelocity().getY() < 0.1) {
+            towerCooldowns.put(zombie.getUniqueId(), now);
             zombie.setVelocity(zombie.getVelocity().setY(0.42));
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 if (!zombie.isValid()) return;
@@ -141,11 +151,11 @@ public class ZombieHandler {
         if (dir.lengthSquared() < 0.1) return;
         dir.normalize();
 
-        Location gapLoc = zombie.getLocation().add(dir).subtract(0, 1, 0);
+        Location gapLoc = zombie.getLocation().clone().add(dir).subtract(0, 1, 0);
         Block gapBlock = gapLoc.getBlock();
         Block belowGap = gapBlock.getRelative(BlockFace.DOWN);
 
-        if (gapBlock.getType().isAir() && belowGap.getType().isAir() && zombie.getLocation().subtract(0, 1, 0).getBlock().getType().isSolid()) {
+        if (gapBlock.getType().isAir() && belowGap.getType().isAir() && zombie.getLocation().clone().subtract(0, 1, 0).getBlock().getType().isSolid()) {
             ItemStack offHand = zombie.getEquipment().getItemInOffHand();
             if (offHand == null || !offHand.getType().isBlock()) return;
 
@@ -172,6 +182,9 @@ public class ZombieHandler {
                 it.remove();
             }
         }
+
+        // Clean tower cooldowns for dead zombies
+        towerCooldowns.entrySet().removeIf(e -> now - e.getValue() > TOWER_COOLDOWN_MS * 2);
     }
 
     private void attemptBreakBlock(Zombie zombie, Player target) {
