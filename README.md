@@ -11,12 +11,20 @@ A Minecraft Paper plugin that makes hostile mobs smarter and more dangerous. Eac
 
 ## Features
 
-### 🧟 Zombie — Block Breaker
+### 🩸 Bleeding Mechanic
+Players have a configurable chance to start "bleeding" when hit by any hostile mob:
+- **Redstone Particles**: Bleeding players trail red dust particles at their feet
+- **Duration**: Lasts 10 seconds by default (configurable)
+- **Trigger**: 15% chance on any monster hit (configurable)
+
+### 🧟 Zombie — Block Breaker & Blood Tracker
 Zombies can break through solid blocks to reach their target:
 - Detects when path is blocked and begins "mining" the obstacle
 - Shows visual block cracking overlay to nearby players
 - Plays correct break sound for each block type
 - **Protected blocks**: Bedrock, Barrier, Obsidian, End Portal Frames, Command Blocks, and Doors
+- **Smell Blood**: Detects bleeding players from up to **64 blocks** away
+- **Blood Lust**: Gains a speed boost when chasing a bleeding target
 
 ### 💥 Creeper — Stealth Stalker
 Creepers behave like ambush predators:

@@ -1,9 +1,12 @@
 package com.antigravity.upgradedhostile.handlers;
 
 import com.antigravity.upgradedhostile.util.MobUtil;
+import com.antigravity.upgradedhostile.managers.BleedManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -18,34 +21,70 @@ import java.util.Map;
 public class ZombieHandler {
 
     private final JavaPlugin plugin;
+    private final BleedManager bleedManager;
     private final Map<Location, BlockDamageEntry> blockDamage = new HashMap<>();
-
     private final int maxDamage;
     private final double detectionRangeSq;
     private final double minRangeSq;
     private final long staleTimeoutMs;
+    private final double smellBloodRangeSq;
+    private final double smellBloodSpeed;
+    private final double normalSpeed;
 
     // Run cleanup only every N calls to amortize cost
     private int cleanupCounter = 0;
     private static final int CLEANUP_INTERVAL = 20;
 
-    public ZombieHandler(JavaPlugin plugin, FileConfiguration config) {
+    public ZombieHandler(JavaPlugin plugin, FileConfiguration config, BleedManager bleedManager) {
         this.plugin = plugin;
+        this.bleedManager = bleedManager;
         this.maxDamage = config.getInt("zombie.break-hits", 10);
         double dr = config.getDouble("zombie.detection-range", 4.0);
         double mr = config.getDouble("zombie.min-range", 1.2);
         this.detectionRangeSq = dr * dr;
         this.minRangeSq = mr * mr;
         this.staleTimeoutMs = config.getLong("zombie.stale-timeout-ms", 10000);
+        double sbr = config.getDouble("zombie.blood-smell-range", 64.0);
+        this.smellBloodRangeSq = sbr * sbr;
+        this.smellBloodSpeed = config.getDouble("zombie.blood-smell-speed", 0.35);
+        this.normalSpeed = config.getDouble("zombie.normal-speed", 0.23);
     }
 
     public void handle(Zombie zombie) {
-        if (!(zombie.getTarget() instanceof Player target)) return;
+        if (!(zombie.getTarget() instanceof Player target)) {
+            // Target acquisition: smell blood
+            acquireBleedingTarget(zombie);
+            return;
+        }
+
         if (!MobUtil.sameWorld(zombie, target)) return;
 
         double distSq = MobUtil.distanceSquared(zombie, target);
+
+        // Apply blood lust speed boost if target is bleeding
+        if (bleedManager.isBleeding(target.getUniqueId())) {
+            AttributeInstance speedAttr = zombie.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+            if (speedAttr != null) speedAttr.setBaseValue(smellBloodSpeed);
+        } else {
+            AttributeInstance speedAttr = zombie.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+            if (speedAttr != null) speedAttr.setBaseValue(normalSpeed);
+        }
+
         if (distSq < detectionRangeSq && distSq > minRangeSq) {
             attemptBreakBlock(zombie, target);
+        }
+    }
+
+    private void acquireBleedingTarget(Zombie zombie) {
+        // Simple scan: check online players
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            if (!MobUtil.sameWorld(zombie, player)) continue;
+            if (bleedManager.isBleeding(player.getUniqueId())) {
+                if (MobUtil.distanceSquared(zombie, player) < smellBloodRangeSq) {
+                    zombie.setTarget(player);
+                    return;
+                }
+            }
         }
     }
 

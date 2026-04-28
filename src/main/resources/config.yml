@@ -2,6 +2,13 @@
 # UpgradedHostile Config
 # ========================
 # Set 'enabled: false' on any mob section to disable its AI.
+# Set 'enabled: false' in general section to disable bleeding effects.
+
+general:
+  # Chance for a player to start bleeding when hit by a mob
+  bleed-chance: 0.15
+  # Duration of the bleeding effect (20 ticks = 1 second)
+  bleed-duration-ticks: 200
 
 # --- Zombie Block Breaking ---
 zombie:
@@ -16,6 +23,13 @@ zombie:
   min-range: 1.2
   # Time in milliseconds before a partially-damaged block resets (zombie died/left)
   stale-timeout-ms: 10000
+  # --- Smell Blood ---
+  # Range within which zombies detect bleeding players
+  blood-smell-range: 64.0
+  # Speed boost when chasing a bleeding player
+  blood-smell-speed: 0.35
+  # Normal speed to reset to
+  normal-speed: 0.23
 
 # --- Creeper Stealth & Surprise ---
 creeper:
