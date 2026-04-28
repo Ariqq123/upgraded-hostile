@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ZombieHandler {
 
@@ -87,7 +88,7 @@ public class ZombieHandler {
 
         if (!MobUtil.sameWorld(zombie, target)) return;
 
-        double distSq = MobUtil.distanceSquared(zombie, target);
+        double distSq = MobUtil.distanceSquaredFast(zombie, target);
 
         // Apply blood lust speed boost if target is bleeding
         if (bleedManager.isBleeding(target.getUniqueId())) {
@@ -109,13 +110,13 @@ public class ZombieHandler {
             double distSq2D = Math.pow(target.getLocation().getX() - zombie.getLocation().getX(), 2) 
                             + Math.pow(target.getLocation().getZ() - zombie.getLocation().getZ(), 2);
 
-            double evoFactor = evolutionManager.getEvolutionFactor(zombie.getLocation().getChunk());
+        double evoFactor = evolutionManager.getEvolutionFactor(zombie.getLocation().getChunk());
             // Smarter zombies (higher evolution) use builder AI more consistently
             double buildChance = 0.3 + (evoFactor * 0.7);
 
-            if (canTower && diffY > 1.5 && distSq2D < 4.0 && Math.random() < buildChance) {
+            if (canTower && diffY > 1.5 && distSq2D < 4.0 && ThreadLocalRandom.current().nextDouble() < buildChance) {
                 attemptTower(zombie);
-            } else if (canBridge && distSq2D > 1.0 && Math.random() < buildChance) {
+            } else if (canBridge && distSq2D > 1.0 && ThreadLocalRandom.current().nextDouble() < buildChance) {
                 attemptBridge(zombie, target);
             }
         }
@@ -194,9 +195,9 @@ public class ZombieHandler {
         torchSnuffCooldowns.put(id, now);
 
         Location loc = zombie.getLocation();
-        for (int x = -5; x <= 5; x++) {
+        for (int x = -3; x <= 3; x++) {
             for (int y = -2; y <= 2; y++) {
-                for (int z = -5; z <= 5; z++) {
+                for (int z = -3; z <= 3; z++) {
                     Block b = loc.clone().add(x, y, z).getBlock();
                     if (b.getType() == Material.TORCH || b.getType() == Material.WALL_TORCH) {
                         if (zombie.getLocation().distanceSquared(b.getLocation()) < 2.25) { // 1.5 blocks

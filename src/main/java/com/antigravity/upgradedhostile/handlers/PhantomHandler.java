@@ -94,13 +94,13 @@ public class PhantomHandler {
 
         double maxDistSq = 0;
         for (Phantom p : phantoms) {
-            double distSq = MobUtil.distanceSquared(p, target);
+            double distSq = MobUtil.distanceSquaredFast(p, target);
             if (distSq > maxDistSq) maxDistSq = distSq;
         }
 
         double syncThresholdSq = maxDistSq * 0.36; // 0.6^2
         for (Phantom phantom : phantoms) {
-            double distSq = MobUtil.distanceSquared(phantom, target);
+            double distSq = MobUtil.distanceSquaredFast(phantom, target);
             if (distSq < syncThresholdSq) {
                 Vector vel = phantom.getVelocity();
                 phantom.setVelocity(vel.multiply(0.5));

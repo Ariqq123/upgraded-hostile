@@ -14,6 +14,7 @@ import org.bukkit.util.Vector;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class SpiderHandler {
 
@@ -42,7 +43,7 @@ public class SpiderHandler {
         if (!(spider.getTarget() instanceof Player target)) return;
         if (!MobUtil.sameWorld(spider, target)) return;
 
-        double distSq = MobUtil.distanceSquared(spider, target);
+        double distSq = MobUtil.distanceSquaredFast(spider, target);
 
         // Behavior 1: Web trap when fleeing at low health
         if (enableWebTrap && spider.getHealth() < webHealthThreshold) {

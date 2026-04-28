@@ -9,6 +9,8 @@ import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class EndermanHandler {
 
     // No attribute modifications → no tracking set needed (was leak source)
@@ -29,7 +31,7 @@ public class EndermanHandler {
         if (!(enderman.getTarget() instanceof Player target)) return;
         if (!MobUtil.sameWorld(enderman, target)) return;
 
-        double distSq = MobUtil.distanceSquared(enderman, target);
+        double distSq = MobUtil.distanceSquaredFast(enderman, target);
         double minFlankSq = 3.0 * 3.0;
 
         if (distSq > minFlankSq && distSq < flankRangeSq) {
@@ -46,7 +48,7 @@ public class EndermanHandler {
     }
 
     private void tryFlankTeleport(Enderman enderman, Player target) {
-        if (Math.random() > 0.15) return;
+        if (ThreadLocalRandom.current().nextDouble() > 0.15) return;
 
         Vector behindPlayer = target.getLocation().getDirection().multiply(-2.0);
         Location behindLoc = target.getLocation().clone().add(behindPlayer);
@@ -65,7 +67,7 @@ public class EndermanHandler {
 
     private void tryPlaceBlockToObstruct(Enderman enderman, Player target) {
         if (enderman.getCarriedBlock() == null) return;
-        if (Math.random() > 0.10) return;
+        if (ThreadLocalRandom.current().nextDouble() > 0.10) return;
 
         Vector playerDir = target.getLocation().getDirection();
         playerDir.setY(0).normalize();

@@ -1,16 +1,23 @@
 package com.antigravity.upgradedhostile;
 
 import com.antigravity.upgradedhostile.handlers.*;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.*;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 /**
- * Single dispatcher task that iterates all living entities ONCE per tick cycle
- * and delegates to individual handlers by entity type.
+ * Single dispatcher task — iterates entities ONCE per tick cycle via Paper's
+ * player-centric spatial query, instead of a full world entity copy.
  *
- * This replaces 7 separate tasks that each did their own full entity scan.
- * Performance fix #1: O(N) total instead of O(7N).
+ * Paper Optimization:
+ *   - world.getNearbyEntities() uses server's internal spatial hash and a type
+ *     predicate, avoiding the full-world list copy of getLivingEntities().
+ *   - A UUID deduplication set prevents double-processing mobs within range of
+ *     multiple players.
  *
  * Runs every 5 ticks. Handlers that need slower rates use internal counters.
  */
@@ -40,6 +47,12 @@ public class MobAIDispatcher extends BukkitRunnable {
     // Cleanup amortization — don't clean every tick
     private int cleanupCounter = 0;
     private static final int CLEANUP_RATE = 10; // Every 10th cycle = every 50 ticks
+
+    // AI processing radius (in blocks). Mobs outside this range from any player are skipped.
+    private static final double AI_RANGE = 80.0;
+
+    // Reused per-tick deduplication set — avoids processing mobs in range of multiple players.
+    private final Set<UUID> processedThisTick = new HashSet<>();
 
     public MobAIDispatcher(
             UpgradedHostile plugin,
@@ -78,7 +91,7 @@ public class MobAIDispatcher extends BukkitRunnable {
     @Override
     public void run() {
         long startTime = System.nanoTime();
-        
+
         tickCount++;
         boolean isSlowTick = (tickCount % SLOW_RATE == 0);
 
@@ -87,26 +100,21 @@ public class MobAIDispatcher extends BukkitRunnable {
             phantomHandler.beginTick();
         }
 
-        // Single pass over all living entities across all worlds
-        for (org.bukkit.World world : Bukkit.getWorlds()) {
-            for (LivingEntity entity : world.getLivingEntities()) {
+        // Clear the dedup set for this tick
+        processedThisTick.clear();
 
-                // Dispatch by type — most common mob types first for branch prediction
-                if (zombieEnabled && isSlowTick && entity instanceof Zombie zombie) {
-                    zombieHandler.handle(zombie);
-                } else if (creeperEnabled && entity instanceof Creeper creeper) {
-                    creeperHandler.handle(creeper);
-                } else if (skeletonEnabled && entity instanceof Skeleton skeleton) {
-                    skeletonHandler.handle(skeleton);
-                } else if (spiderEnabled && isSlowTick && entity instanceof Spider spider) {
-                    spiderHandler.handle(spider);
-                } else if (phantomEnabled && entity instanceof Phantom phantom) {
-                    phantomHandler.handle(phantom);
-                } else if (endermanEnabled && isSlowTick && entity instanceof Enderman enderman) {
-                    endermanHandler.handle(enderman);
-                } else if (witchEnabled && isSlowTick && entity instanceof Witch witch) {
-                    witchHandler.handle(witch);
-                }
+        // --- Paper-optimized: query by player proximity, not world-wide scan ---
+        for (org.bukkit.World world : plugin.getServer().getWorlds()) {
+            List<Player> players = world.getPlayers();
+            if (players.isEmpty()) continue; // No players = no mobs to process
+
+            for (Player player : players) {
+                // Paper's getNearbyEntities uses the server's spatial hash with a predicate filter.
+                // This avoids creating a full copy of all living entities in the world.
+                world.getNearbyEntities(player.getLocation(), AI_RANGE, AI_RANGE, AI_RANGE, entity -> {
+                    // Filter inline: only Monsters not yet seen this tick
+                    return (entity instanceof Monster) && processedThisTick.add(entity.getUniqueId());
+                }).forEach(entity -> dispatch((LivingEntity) entity, isSlowTick));
             }
         }
 
@@ -130,6 +138,25 @@ public class MobAIDispatcher extends BukkitRunnable {
         long endTime = System.nanoTime();
         if (tickCount % 20 == 0) { // Log every 20 executions (approx 5 seconds)
             plugin.debug("MobAIDispatcher cycle completed in " + ((endTime - startTime) / 1_000_000.0) + "ms");
+        }
+    }
+
+    private void dispatch(LivingEntity entity, boolean isSlowTick) {
+        // Most common mob types checked first (branch prediction benefit)
+        if (zombieEnabled && isSlowTick && entity instanceof Zombie zombie) {
+            zombieHandler.handle(zombie);
+        } else if (creeperEnabled && entity instanceof Creeper creeper) {
+            creeperHandler.handle(creeper);
+        } else if (skeletonEnabled && entity instanceof Skeleton skeleton) {
+            skeletonHandler.handle(skeleton);
+        } else if (spiderEnabled && isSlowTick && entity instanceof Spider spider) {
+            spiderHandler.handle(spider);
+        } else if (phantomEnabled && entity instanceof Phantom phantom) {
+            phantomHandler.handle(phantom);
+        } else if (endermanEnabled && isSlowTick && entity instanceof Enderman enderman) {
+            endermanHandler.handle(enderman);
+        } else if (witchEnabled && isSlowTick && entity instanceof Witch witch) {
+            witchHandler.handle(witch);
         }
     }
 }

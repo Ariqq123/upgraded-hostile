@@ -43,7 +43,7 @@ public class WitchHandler {
         if (!MobUtil.sameWorld(witch, target)) return;
 
         modifiedWitches.put(witch.getUniqueId(), witch);
-        double distSq = MobUtil.distanceSquared(witch, target);
+        double distSq = MobUtil.distanceSquaredFast(witch, target);
 
         if (distSq < kiteDistanceSq) {
             performKite(witch, target);

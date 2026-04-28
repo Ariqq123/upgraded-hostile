@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class SkeletonHandler {
 
@@ -72,22 +73,22 @@ public class SkeletonHandler {
         UUID id = skeleton.getUniqueId();
         modifiedSkeletons.put(id, skeleton);
 
-        double distSq = MobUtil.distanceSquared(skeleton, target);
+        double distSq = MobUtil.distanceSquaredFast(skeleton, target);
         double evoFactor = evolutionManager.getEvolutionFactor(skeleton.getLocation().getChunk());
         
         // Smarter skeletons use cover and strafe more consistently
         double tacticalChance = 0.4 + (evoFactor * 0.6);
 
-        if (isPlayerAimingBow(target) && distSq < strafeThresholdSq && Math.random() < tacticalChance) {
+        if (isPlayerAimingBow(target) && distSq < strafeThresholdSq && ThreadLocalRandom.current().nextDouble() < tacticalChance) {
             performStrafe(skeleton, target, id);
         }
 
-        if (MobUtil.isLookingAt(target, skeleton, 0.7) && distSq < coverSeekRangeSq && Math.random() < tacticalChance) {
+        if (MobUtil.isLookingAt(target, skeleton, 0.7) && distSq < coverSeekRangeSq && ThreadLocalRandom.current().nextDouble() < tacticalChance) {
             seekCover(skeleton, target);
         }
         
         // Also try mounting spider if target exists but currently on foot
-        if (canDynamicJockey && !skeleton.isInsideVehicle() && Math.random() < 0.03) {
+        if (canDynamicJockey && !skeleton.isInsideVehicle() && ThreadLocalRandom.current().nextDouble() < 0.03) {
             attemptJockey(skeleton);
         }
     }
@@ -194,9 +195,9 @@ public class SkeletonHandler {
         torchSnuffCooldowns.put(id, now);
 
         Location loc = skeleton.getLocation();
-        for (int x = -5; x <= 5; x++) {
+        for (int x = -3; x <= 3; x++) {
             for (int y = -2; y <= 2; y++) {
-                for (int z = -5; z <= 5; z++) {
+                for (int z = -3; z <= 3; z++) {
                     Block b = loc.clone().add(x, y, z).getBlock();
                     if (b.getType() == Material.TORCH || b.getType() == Material.WALL_TORCH) {
                         if (skeleton.getLocation().distanceSquared(b.getLocation()) < 2.25) {

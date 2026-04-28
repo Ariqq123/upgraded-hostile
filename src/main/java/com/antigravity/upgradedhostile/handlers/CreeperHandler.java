@@ -50,7 +50,7 @@ public class CreeperHandler {
                 speedAttr.setBaseValue(creeperSlowSpeed);
             } else {
                 speedAttr.setBaseValue(creeperFastSpeed);
-                double distSq = MobUtil.distanceSquared(creeper, target);
+                double distSq = MobUtil.distanceSquaredFast(creeper, target);
                 if (distSq < surpriseRangeSq && !creeper.isIgnited()) {
                     creeper.ignite();
                 }
