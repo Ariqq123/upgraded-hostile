@@ -106,9 +106,10 @@ public class ZombieHandler {
         // Builder AI
         ItemStack offHand = zombie.getEquipment().getItemInOffHand();
         if (offHand != null && offHand.getType().isBlock()) {
-            double diffY = target.getLocation().getY() - zombie.getLocation().getY();
-            double distSq2D = Math.pow(target.getLocation().getX() - zombie.getLocation().getX(), 2) 
-                            + Math.pow(target.getLocation().getZ() - zombie.getLocation().getZ(), 2);
+            double dx = target.getX() - zombie.getX();
+            double dz = target.getZ() - zombie.getZ();
+            double distSq2D = dx * dx + dz * dz;
+            double diffY = target.getY() - zombie.getY();
 
         double evoFactor = evolutionManager.getEvolutionFactor(zombie.getLocation().getChunk());
             // Smarter zombies (higher evolution) use builder AI more consistently

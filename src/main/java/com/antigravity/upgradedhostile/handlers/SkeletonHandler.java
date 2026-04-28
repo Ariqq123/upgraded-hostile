@@ -28,6 +28,10 @@ public class SkeletonHandler {
     private final Map<UUID, Skeleton> modifiedSkeletons = new HashMap<>();
     private final Map<UUID, Boolean> strafeDirection = new HashMap<>();
 
+    private static final BlockFace[] HORIZONTAL_FACES = {
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST
+    };
+
     private final JavaPlugin plugin;
     private final EvolutionManager evolutionManager;
     private final double strafeSpeed;
@@ -112,9 +116,8 @@ public class SkeletonHandler {
 
     private boolean isPlayerAimingBow(Player player) {
         if (player.getActiveItem() == null) return false;
-        String itemName = player.getActiveItem().getType().name();
-        return (itemName.contains("BOW") || itemName.contains("CROSSBOW"))
-                && player.isHandRaised();
+        Material type = player.getActiveItem().getType();
+        return (type == Material.BOW || type == Material.CROSSBOW) && player.isHandRaised();
     }
 
     private void performStrafe(Skeleton skeleton, Player target, UUID id) {
@@ -144,7 +147,7 @@ public class SkeletonHandler {
     }
 
     private void seekCover(Skeleton skeleton, Player target) {
-        for (BlockFace face : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST}) {
+        for (BlockFace face : HORIZONTAL_FACES) {
             Block adjacent = skeleton.getLocation().getBlock().getRelative(face);
             if (adjacent.getType().isSolid()) {
                 Location coverSpot = adjacent.getLocation().clone()
