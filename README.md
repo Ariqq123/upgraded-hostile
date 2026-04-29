@@ -5,6 +5,10 @@
 ![Paper](https://img.shields.io/badge/Paper_API-1.20.1-orange?style=for-the-badge)
 ![Java](https://img.shields.io/badge/Java-17+-red?style=for-the-badge&logo=openjdk&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-purple?style=for-the-badge)
+![Mobs](https://img.shields.io/badge/upgraded_mobs-7-yellow?style=for-the-badge)
+![Made with AntiGravity](https://img.shields.io/badge/Made%20with-AntiGravity-blueviolet?style=for-the-badge&logo=googlecloud&logoColor=white)
+
+A Minecraft Paper plugin that makes hostile mobs smarter and more dangerous. Each mob type gets unique tactical AI that goes far beyond vanilla behavior.
 
 ## Features
 
@@ -93,3 +97,7 @@ See `config.yml` for the full list of tunable parameters per mob.
 mvn clean package
 ```
 
+The compiled JAR will be in `target/upgradedhostile-1.0.0.jar`.
+
+---
+Made with ❤️ by **AntiGravity**
