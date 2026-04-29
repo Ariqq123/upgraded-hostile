@@ -36,6 +36,7 @@ public class ControlGUI implements Listener {
     private static final int SLOT_JOCKEY = 49;
     private static final int SLOT_SNUFF = 50;
     private static final int SLOT_DROWNED = 25;
+    private static final int SLOT_RAGE = 43;
 
     public static void open(UpgradedHostile plugin, Player player) {
         Inventory inv = Bukkit.createInventory(null, 54, TITLE);
@@ -66,6 +67,7 @@ public class ControlGUI implements Listener {
         inv.setItem(SLOT_EVOLUTION, createToggleItem(Material.NETHER_STAR, "Evolution System", config.getBoolean("general.evolution-enabled", true)));
         inv.setItem(SLOT_JOCKEY, createToggleItem(Material.SADDLE, "Dynamic Jockeys", config.getBoolean("skeleton.can-dynamic-jockey", true)));
         inv.setItem(SLOT_SNUFF, createToggleItem(Material.TORCH, "Torch Snuffing", config.getBoolean("zombie.can-snuff-torches", true)));
+        inv.setItem(SLOT_RAGE, createToggleItem(Material.MAGMA_CREAM, "Territorial Rage", config.getBoolean("territorial-rage.enabled", true)));
 
         player.openInventory(inv);
     }
@@ -138,6 +140,10 @@ public class ControlGUI implements Listener {
             boolean current = config.getBoolean("zombie.can-snuff-torches", true);
             config.set("zombie.can-snuff-torches", !current);
             config.set("skeleton.can-snuff-torches", !current);
+            toggled = true;
+        } else if (slot == SLOT_RAGE) {
+            boolean current = config.getBoolean("territorial-rage.enabled", true);
+            config.set("territorial-rage.enabled", !current);
             toggled = true;
         }
 

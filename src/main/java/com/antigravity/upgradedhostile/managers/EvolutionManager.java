@@ -17,6 +17,18 @@ public class EvolutionManager {
     private static final long FLUSH_THRESHOLD_MS = 24 * 60 * 60 * 1000L; // 24 hours
     private static final int MAX_KILLS_FOR_LEVEL = 100; // 100 kills = 1.0 factor
 
+    /** Evolution factor threshold above which a chunk is considered "Raging". */
+    private final double rageThreshold;
+
+    public EvolutionManager(double rageThreshold) {
+        this.rageThreshold = rageThreshold;
+    }
+
+    /** Convenience constructor — uses default threshold (0.6) when not configured. */
+    public EvolutionManager() {
+        this(0.6);
+    }
+
     public void recordKill(Chunk chunk) {
         ChunkKey key = new ChunkKey(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
         chunkData.compute(key, (k, data) -> {
@@ -35,6 +47,17 @@ public class EvolutionManager {
         if (data == null) return 0.0;
         
         return Math.min(1.0, (double) data.kills / MAX_KILLS_FOR_LEVEL);
+    }
+
+    /**
+     * Returns true if the given chunk has an evolution factor at or above the rage threshold.
+     * Fast path: avoids computing the factor twice by inlining the kill count check.
+     */
+    public boolean isRaging(Chunk chunk) {
+        ChunkKey key = new ChunkKey(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
+        EvolutionData data = chunkData.get(key);
+        if (data == null) return false;
+        return ((double) data.kills / MAX_KILLS_FOR_LEVEL) >= rageThreshold;
     }
 
     public void cleanup() {

@@ -1,6 +1,7 @@
 package com.antigravity.upgradedhostile.handlers;
 
 import com.antigravity.upgradedhostile.util.MobUtil;
+import com.antigravity.upgradedhostile.managers.EvolutionManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -18,8 +19,10 @@ public class EndermanHandler {
     private final double flankRangeSq;
     private final double blockPlaceRangeSq;
     private final boolean enableBlockWeaponization;
+    private final EvolutionManager evolutionManager;
 
-    public EndermanHandler(FileConfiguration config) {
+    public EndermanHandler(FileConfiguration config, EvolutionManager evolutionManager) {
+        this.evolutionManager = evolutionManager;
         double fr = config.getDouble("enderman.flank-range", 10.0);
         double bpr = config.getDouble("enderman.block-place-range", 3.0);
         this.flankRangeSq = fr * fr;
@@ -48,7 +51,9 @@ public class EndermanHandler {
     }
 
     private void tryFlankTeleport(Enderman enderman, Player target) {
-        if (ThreadLocalRandom.current().nextDouble() > 0.15) return;
+        // In Rage chunks, always attempt the flank (no RNG gate)
+        boolean isRaging = evolutionManager.isRaging(enderman.getLocation().getChunk());
+        if (!isRaging && ThreadLocalRandom.current().nextDouble() > 0.15) return;
 
         Vector behindPlayer = target.getLocation().getDirection().multiply(-2.0);
         Location behindLoc = target.getLocation().clone().add(behindPlayer);

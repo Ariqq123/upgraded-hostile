@@ -63,6 +63,8 @@ creeper:
   surprise-range: 2.5
   # Dot product threshold for "player is looking at creeper" (0.7 ≈ 45° FOV)
   looking-at-threshold: 0.7
+  # Fuse ticks when in a Territorial Rage chunk (even shorter than surprise)
+  rage-fuse-ticks: 5
 
 # --- Skeleton Tactical Shooter ---
 skeleton:
@@ -141,3 +143,23 @@ drowned:
   min-evolution-factor: 0.4
   # Multiplier for the pull velocity
   pull-strength: 0.3
+
+# --- Territorial Rage System ---
+# When a chunk's evolution factor reaches the threshold, all mobs in that chunk
+# become "Enraged" — they deal bonus damage, emit a crimson aura, and exhibit
+# enhanced AI behaviors (pack howling, offensive webs, instant flanking, etc.)
+territorial-rage:
+  # Master toggle for the entire Territorial Rage system
+  enabled: true
+  # Evolution factor required to trigger rage (0.0 – 1.0)
+  threshold: 0.6
+  # Bonus damage multiplier applied to Rage mob attacks
+  damage-multiplier: 1.25
+  # Range within which revenge targeting activates when a rage mob is killed (blocks)
+  revenge-range: 24.0
+  # Pack Howl: range zombies converge from on first player sighting (blocks)
+  pack-howl-range: 32.0
+  # Whether the crimson particle aura is shown on rage mobs
+  aura-particles: true
+  # Creeper fuse ticks in rage mode (even shorter than surprise fuse)
+  # Note: also set via creeper.rage-fuse-ticks for per-mob override

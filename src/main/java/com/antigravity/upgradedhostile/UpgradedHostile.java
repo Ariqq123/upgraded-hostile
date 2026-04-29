@@ -4,6 +4,7 @@ import com.antigravity.upgradedhostile.handlers.*;
 import com.antigravity.upgradedhostile.listeners.BleedListener;
 import com.antigravity.upgradedhostile.listeners.DrownedListener;
 import com.antigravity.upgradedhostile.listeners.EvolutionListener;
+import com.antigravity.upgradedhostile.listeners.RageListener;
 import com.antigravity.upgradedhostile.managers.BleedManager;
 import com.antigravity.upgradedhostile.managers.EvolutionManager;
 import com.antigravity.upgradedhostile.commands.UHostileCommand;
@@ -34,8 +35,9 @@ public class UpgradedHostile extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         
-        // Initialize Persistent Managers
-        this.evolutionManager = new EvolutionManager();
+        // Initialize Persistent Managers — read rage threshold from config early
+        double rageThreshold = getConfig().getDouble("territorial-rage.threshold", 0.6);
+        this.evolutionManager = new EvolutionManager(rageThreshold);
         File evoFile = new File(getDataFolder(), "evolution_data.yml");
         this.evolutionManager.load(evoFile);
 
@@ -82,13 +84,23 @@ public class UpgradedHostile extends JavaPlugin {
         boolean witchEnabled = config.getBoolean("witch.enabled", true);
         boolean drownedEnabled = config.getBoolean("drowned.enabled", true);
 
+        // Territorial Rage config
+        boolean rageEnabled = config.getBoolean("territorial-rage.enabled", true);
+        boolean rageAuraEnabled = config.getBoolean("territorial-rage.aura-particles", true);
+        double rageDamageMultiplier = config.getDouble("territorial-rage.damage-multiplier", 1.25);
+        double rageRevengeRange = config.getDouble("territorial-rage.revenge-range", 24.0);
+
+        // Register Rage Listener
+        getServer().getPluginManager().registerEvents(
+                new RageListener(evolutionManager, rageDamageMultiplier, rageRevengeRange, rageEnabled), this);
+
         // Create handlers
         ZombieHandler zombieHandler = new ZombieHandler(this, config, bleedManager, evolutionManager);
-        CreeperHandler creeperHandler = new CreeperHandler(config);
+        CreeperHandler creeperHandler = new CreeperHandler(config, evolutionManager);
         SkeletonHandler skeletonHandler = new SkeletonHandler(this, config, evolutionManager);
-        SpiderHandler spiderHandler = new SpiderHandler(this, config);
+        SpiderHandler spiderHandler = new SpiderHandler(this, config, evolutionManager);
         PhantomHandler phantomHandler = new PhantomHandler(config);
-        EndermanHandler endermanHandler = new EndermanHandler(config);
+        EndermanHandler endermanHandler = new EndermanHandler(config, evolutionManager);
         WitchHandler witchHandler = new WitchHandler(config);
         DrownedHandler drownedHandler = new DrownedHandler(this, config, evolutionManager);
 
@@ -99,8 +111,10 @@ public class UpgradedHostile extends JavaPlugin {
         MobAIDispatcher dispatcher = new MobAIDispatcher(
                 this, zombieHandler, creeperHandler, skeletonHandler,
                 spiderHandler, phantomHandler, endermanHandler, witchHandler, drownedHandler,
+                evolutionManager,
                 zombieEnabled, creeperEnabled, skeletonEnabled,
-                spiderEnabled, phantomEnabled, endermanEnabled, witchEnabled, drownedEnabled
+                spiderEnabled, phantomEnabled, endermanEnabled, witchEnabled, drownedEnabled,
+                rageAuraEnabled && rageEnabled
         );
 
         // Run every 5 ticks (0.25s) — internal rate limiting handles slower mobs

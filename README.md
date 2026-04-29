@@ -4,7 +4,7 @@
 
 # UpgradedHostile
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.5.0-blue?style=for-the-badge)
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1+-green?style=for-the-badge&logo=minecraft&logoColor=white)
 ![Paper](https://img.shields.io/badge/Paper_API-1.20.1-orange?style=for-the-badge)
 ![Java](https://img.shields.io/badge/Java-17+-red?style=for-the-badge&logo=openjdk&logoColor=white)
@@ -73,10 +73,22 @@ Drowned use their tridents as lethal harpoons to catch prey:
 - **Torpedo Dash**: If the player is in water, the Drowned zips toward them for a melee strike.
 - **Evolution Gated**: Only triggers in High Evolution chunks (min 0.4).
 - **Visuals**: Bubble and wake particles trail the harpoon hit.
+- **Water Circling**: Drowned strafe around targets in water, keeping optimal distance.
+
+### 🔥 Territorial Rage System
+When players farm too many mobs in one area, that chunk becomes a **Rage Zone**:
+- **Crimson Aura**: Enraged mobs emit a red particle halo — players can *see* danger zones.
+- **Damage Scaling**: Rage mobs deal ×1.25 damage (configurable).
+- **Revenge Aggro**: Kill a Rage mob and all nearby Rage mobs immediately re-target you.
+- **Pack Howl (Zombies)**: The first zombie to spot a player howls, alerting all zombies within 32 blocks.
+- **Instant Flank (Enderman)**: Rage Endermen teleport behind the player without RNG delay.
+- **Offensive Webs (Spider)**: Rage spiders place webs in the player's escape path.
+- **Rapid Fuse (Creeper)**: Rage creepers use an even shorter fuse (5 ticks by default).
+- **Threshold**: Activates at evolution factor ≥ 0.6 (configurable, scales with kills in the chunk).
 
 ## Installation
 
-1. Download `upgradedhostile-1.0.0.jar` from the `target/` directory.
+1. Download `upgradedhostile-1.5.0.jar` from the [Releases](https://github.com/Ariqq123/upgraded-hostile/releases) page.
 2. Place it in your server's `plugins/` folder.
 3. Restart the server.
 4. Adjust `plugins/UpgradedHostile/config.yml` to taste and reload.
@@ -96,6 +108,7 @@ Every mob can be **individually enabled/disabled** and all behavior parameters a
 | Enderman | `enderman.enabled` | `true` |
 | Witch | `witch.enabled` | `true` |
 | Drowned | `drowned.enabled` | `true` |
+| **Territorial Rage** | `territorial-rage.enabled` | `true` |
 
 See `config.yml` for the full list of tunable parameters per mob.
 
@@ -110,7 +123,7 @@ See `config.yml` for the full list of tunable parameters per mob.
 mvn clean package
 ```
 
-The compiled JAR will be in `target/upgradedhostile-1.0.0.jar`.
+The compiled JAR will be in `target/upgradedhostile-1.5.0.jar`.
 
 ---
 Authored by **azreyzaako** — Made with ❤️ using AntiGravity

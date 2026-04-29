@@ -35,7 +35,21 @@ public class DrownedHandler {
     }
 
     public void handle(Drowned drowned) {
-        // Standard AI could be added here later (e.g., circling players)
+        if (!(drowned.getTarget() instanceof Player target)) return;
+        if (drowned.getWorld() != target.getWorld()) return;
+
+        // Basic water-circle: if in water and target is within 8 blocks, strafe around them
+        if (drowned.isInWater()) {
+            double distSq = drowned.getLocation().distanceSquared(target.getLocation());
+            if (distSq < 64.0 && distSq > 4.0) { // 8 blocks max, 2 blocks min
+                org.bukkit.util.Vector toPlayer = target.getLocation().toVector()
+                        .subtract(drowned.getLocation().toVector()).normalize();
+                // Perpendicular strafe vector (rotate 90°)
+                org.bukkit.util.Vector strafe = new org.bukkit.util.Vector(-toPlayer.getZ(), 0, toPlayer.getX());
+                org.bukkit.Location strafeLoc = drowned.getLocation().clone().add(strafe.multiply(2.0));
+                drowned.getPathfinder().moveTo(strafeLoc);
+            }
+        }
     }
 
     public void attemptHarpoon(Drowned drowned, Player target, ItemStack tridentItem) {

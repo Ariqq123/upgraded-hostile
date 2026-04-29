@@ -1,6 +1,8 @@
 package com.antigravity.upgradedhostile;
 
 import com.antigravity.upgradedhostile.handlers.*;
+import com.antigravity.upgradedhostile.managers.EvolutionManager;
+import com.antigravity.upgradedhostile.util.MobUtil;
 import org.bukkit.entity.*;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -32,6 +34,7 @@ public class MobAIDispatcher extends BukkitRunnable {
     private final EndermanHandler endermanHandler;
     private final WitchHandler witchHandler;
     private final DrownedHandler drownedHandler;
+    private final EvolutionManager evolutionManager;
 
     private final boolean zombieEnabled;
     private final boolean creeperEnabled;
@@ -41,6 +44,7 @@ public class MobAIDispatcher extends BukkitRunnable {
     private final boolean endermanEnabled;
     private final boolean witchEnabled;
     private final boolean drownedEnabled;
+    private final boolean rageAuraEnabled;
 
     // Tick counter for handlers that run at slower rates
     private int tickCount = 0;
@@ -66,6 +70,7 @@ public class MobAIDispatcher extends BukkitRunnable {
             EndermanHandler endermanHandler,
             WitchHandler witchHandler,
             DrownedHandler drownedHandler,
+            EvolutionManager evolutionManager,
             boolean zombieEnabled,
             boolean creeperEnabled,
             boolean skeletonEnabled,
@@ -73,7 +78,8 @@ public class MobAIDispatcher extends BukkitRunnable {
             boolean phantomEnabled,
             boolean endermanEnabled,
             boolean witchEnabled,
-            boolean drownedEnabled
+            boolean drownedEnabled,
+            boolean rageAuraEnabled
     ) {
         this.plugin = plugin;
         this.zombieHandler = zombieHandler;
@@ -84,6 +90,7 @@ public class MobAIDispatcher extends BukkitRunnable {
         this.endermanHandler = endermanHandler;
         this.witchHandler = witchHandler;
         this.drownedHandler = drownedHandler;
+        this.evolutionManager = evolutionManager;
         this.zombieEnabled = zombieEnabled;
         this.creeperEnabled = creeperEnabled;
         this.skeletonEnabled = skeletonEnabled;
@@ -92,6 +99,7 @@ public class MobAIDispatcher extends BukkitRunnable {
         this.endermanEnabled = endermanEnabled;
         this.witchEnabled = witchEnabled;
         this.drownedEnabled = drownedEnabled;
+        this.rageAuraEnabled = rageAuraEnabled;
     }
 
     @Override
@@ -149,6 +157,11 @@ public class MobAIDispatcher extends BukkitRunnable {
     }
 
     private void dispatch(LivingEntity entity, boolean isSlowTick) {
+        // Rage aura: emit crimson particles for mobs in Rage chunks (on slow ticks only to save perf)
+        if (rageAuraEnabled && isSlowTick && evolutionManager.isRaging(entity.getLocation().getChunk())) {
+            MobUtil.spawnRageAura(entity);
+        }
+
         // Most common mob types checked first (branch prediction benefit)
         if (zombieEnabled && isSlowTick && entity instanceof Zombie zombie) {
             zombieHandler.handle(zombie);

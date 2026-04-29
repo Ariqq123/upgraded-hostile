@@ -41,6 +41,7 @@ public class ZombieHandler {
     private final boolean canTower;
     private final boolean canBridge;
     private final boolean canSnuffTorches;
+    private final double packHowlRange;
 
     // Run cleanup only every N calls to amortize cost
     private int cleanupCounter = 0;
@@ -53,6 +54,10 @@ public class ZombieHandler {
     // Torch snuff cooldown: 10 second gap between scans per mob
     private final Map<UUID, Long> torchSnuffCooldowns = new HashMap<>();
     private static final long TORCH_SNUFF_COOLDOWN_MS = 10_000L;
+
+    // Pack Howl: per-zombie cooldown to prevent spam
+    private final Map<UUID, Long> packHowlCooldowns = new HashMap<>();
+    private static final long PACK_HOWL_COOLDOWN_MS = 30_000L; // 30 seconds
 
     public ZombieHandler(JavaPlugin plugin, FileConfiguration config, BleedManager bleedManager, EvolutionManager evolutionManager) {
         this.plugin = plugin;
@@ -72,6 +77,7 @@ public class ZombieHandler {
         this.canTower = config.getBoolean("zombie.can-tower", true);
         this.canBridge = config.getBoolean("zombie.can-bridge", true);
         this.canSnuffTorches = config.getBoolean("zombie.can-snuff-torches", true);
+        this.packHowlRange = config.getDouble("territorial-rage.pack-howl-range", 32.0);
     }
 
     public void handle(Zombie zombie) {
@@ -84,6 +90,11 @@ public class ZombieHandler {
                 attemptTorchSnuff(zombie);
             }
             return;
+        }
+
+        // Pack Howl: in Rage chunks, alert all nearby zombies when first spotting a player
+        if (evolutionManager.isRaging(zombie.getLocation().getChunk())) {
+            attemptPackHowl(zombie, target);
         }
 
         if (!MobUtil.sameWorld(zombie, target)) return;
@@ -195,22 +206,38 @@ public class ZombieHandler {
         if (now - torchSnuffCooldowns.getOrDefault(id, 0L) < TORCH_SNUFF_COOLDOWN_MS) return;
         torchSnuffCooldowns.put(id, now);
 
-        Location loc = zombie.getLocation();
-        for (int x = -3; x <= 3; x++) {
-            for (int y = -2; y <= 2; y++) {
-                for (int z = -3; z <= 3; z++) {
-                    Block b = loc.clone().add(x, y, z).getBlock();
-                    if (b.getType() == Material.TORCH || b.getType() == Material.WALL_TORCH) {
-                        if (zombie.getLocation().distanceSquared(b.getLocation()) < 2.25) { // 1.5 blocks
-                            b.breakNaturally();
-                            zombie.swingMainHand();
-                            b.getWorld().playSound(b.getLocation(), b.getBlockData().getSoundGroup().getBreakSound(), 1.0f, 1.0f);
-                        } else {
-                            zombie.getPathfinder().moveTo(b.getLocation());
-                        }
-                        return; // Only target one torch at a time
-                    }
-                }
+        Block torch = MobUtil.findNearestTorch(zombie, 3);
+        if (torch == null) return;
+
+        if (zombie.getLocation().distanceSquared(torch.getLocation()) < 2.25) { // 1.5 blocks
+            torch.breakNaturally();
+            zombie.swingMainHand();
+            torch.getWorld().playSound(torch.getLocation(), torch.getBlockData().getSoundGroup().getBreakSound(), 1.0f, 1.0f);
+        } else {
+            zombie.getPathfinder().moveTo(torch.getLocation());
+        }
+    }
+
+    /**
+     * Pack Howl: When a Rage zombie first acquires a player target, alert all nearby zombies
+     * to converge on the player's last known location. Gated by a 30s per-zombie cooldown.
+     */
+    private void attemptPackHowl(Zombie zombie, Player target) {
+        UUID id = zombie.getUniqueId();
+        long now = System.currentTimeMillis();
+        if (now - packHowlCooldowns.getOrDefault(id, 0L) < PACK_HOWL_COOLDOWN_MS) return;
+        packHowlCooldowns.put(id, now);
+
+        Location targetLoc = target.getLocation();
+
+        // Play the howl sound
+        zombie.getWorld().playSound(zombie.getLocation(),
+                org.bukkit.Sound.ENTITY_WOLF_HOWL, 1.0f, 0.6f);
+
+        // Alert nearby zombies
+        for (org.bukkit.entity.Entity nearby : zombie.getNearbyEntities(packHowlRange, packHowlRange / 2, packHowlRange)) {
+            if (nearby instanceof Zombie other && other.getUniqueId() != id && other.getTarget() == null) {
+                other.getPathfinder().moveTo(targetLoc);
             }
         }
     }
@@ -233,6 +260,8 @@ public class ZombieHandler {
         towerCooldowns.entrySet().removeIf(e -> now - e.getValue() > TOWER_COOLDOWN_MS * 2);
         // Clean torch-snuff cooldowns
         torchSnuffCooldowns.entrySet().removeIf(e -> now - e.getValue() > TORCH_SNUFF_COOLDOWN_MS * 2);
+        // Clean pack-howl cooldowns
+        packHowlCooldowns.entrySet().removeIf(e -> now - e.getValue() > PACK_HOWL_COOLDOWN_MS * 2);
     }
 
     private void attemptBreakBlock(Zombie zombie, Player target) {

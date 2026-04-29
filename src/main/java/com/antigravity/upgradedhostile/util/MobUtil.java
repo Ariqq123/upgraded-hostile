@@ -1,5 +1,10 @@
 package com.antigravity.upgradedhostile.util;
 
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -72,4 +77,46 @@ public final class MobUtil {
     public static double distance(LivingEntity a, LivingEntity b) {
         return Math.sqrt(distanceSquaredFast(a, b));
     }
+
+    /**
+     * Find the nearest torch (TORCH or WALL_TORCH) within a cubic scan around a mob.
+     * Returns null if none found. Replaces the duplicated O(n³) scan in Zombie/SkeletonHandler.
+     *
+     * @param entity The mob scanning for torches
+     * @param radius Half-extent of the scan cube in blocks (e.g., 3 = 7×5×7 area)
+     * @return Nearest torch Block, or null
+     */
+    public static Block findNearestTorch(LivingEntity entity, int radius) {
+        Location loc = entity.getLocation();
+        Block nearest = null;
+        double nearestDistSq = Double.MAX_VALUE;
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -2; y <= 2; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    Block b = loc.clone().add(x, y, z).getBlock();
+                    if (b.getType() == Material.TORCH || b.getType() == Material.WALL_TORCH) {
+                        double distSq = loc.distanceSquared(b.getLocation());
+                        if (distSq < nearestDistSq) {
+                            nearestDistSq = distSq;
+                            nearest = b;
+                        }
+                    }
+                }
+            }
+        }
+        return nearest;
+    }
+
+    /**
+     * Spawn the Territorial Rage crimson aura around a mob.
+     * Called by the dispatcher every slow tick for Rage-chunk mobs.
+     * Low-cost: only 4 particles, no allocation beyond Particle.DustOptions.
+     */
+    public static void spawnRageAura(LivingEntity entity) {
+        Location center = entity.getLocation().add(0, 1.0, 0);
+        Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(180, 0, 0), 1.2f);
+        entity.getWorld().spawnParticle(Particle.REDSTONE, center, 4, 0.35, 0.5, 0.35, dust);
+    }
 }
+

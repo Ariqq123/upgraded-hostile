@@ -1,6 +1,7 @@
 package com.antigravity.upgradedhostile.handlers;
 
 import com.antigravity.upgradedhostile.util.MobUtil;
+import com.antigravity.upgradedhostile.managers.EvolutionManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -11,17 +12,25 @@ import org.bukkit.entity.Spider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SpiderHandler {
 
     private final JavaPlugin plugin;
+    private final EvolutionManager evolutionManager;
 
     // Fix #3: Track locations with pending web cleanup tasks to avoid scheduling duplicates
     private final Set<Location> pendingWebCleanups = new HashSet<>();
+
+    // Offensive web cooldown per-spider (Rage mode only)
+    private final Map<UUID, Long> offensiveWebCooldowns = new HashMap<>();
+    private static final long OFFENSIVE_WEB_COOLDOWN_MS = 5_000L;
 
     private final double leapRangeSq;
     private final double leapVelocity;
@@ -29,8 +38,9 @@ public class SpiderHandler {
     private final double webHealthThreshold;
     private final boolean enableWebTrap;
 
-    public SpiderHandler(JavaPlugin plugin, FileConfiguration config) {
+    public SpiderHandler(JavaPlugin plugin, FileConfiguration config, EvolutionManager evolutionManager) {
         this.plugin = plugin;
+        this.evolutionManager = evolutionManager;
         double lr = config.getDouble("spider.leap-range", 6.0);
         this.leapRangeSq = lr * lr;
         this.leapVelocity = config.getDouble("spider.leap-velocity", 1.2);
@@ -62,6 +72,11 @@ public class SpiderHandler {
         if (distSq <= leapRangeSq && distSq > minLeapSq && !MobUtil.isLookingAt(target, spider, 0.7)) {
             performLeap(spider, target);
         }
+
+        // Behavior 4: Offensive web trap in Rage chunks (blocks escape route)
+        if (enableWebTrap && evolutionManager.isRaging(spider.getLocation().getChunk())) {
+            attemptOffensiveWeb(spider, target);
+        }
     }
 
     /**
@@ -72,11 +87,13 @@ public class SpiderHandler {
         Iterator<Location> it = pendingWebCleanups.iterator();
         while (it.hasNext()) {
             Location loc = it.next();
-            // If the block is no longer a cobweb, the cleanup task already ran or player broke it
             if (loc.getBlock().getType() != Material.COBWEB) {
                 it.remove();
             }
         }
+        // Clean offensive web cooldowns for dead spiders
+        long now = System.currentTimeMillis();
+        offensiveWebCooldowns.entrySet().removeIf(e -> now - e.getValue() > OFFENSIVE_WEB_COOLDOWN_MS * 2);
     }
 
     private void tryPlaceWeb(Spider spider) {
@@ -129,5 +146,35 @@ public class SpiderHandler {
         Vector leapVec = toPlayer.multiply(leapVelocity);
         leapVec.setY(0.5);
         spider.setVelocity(leapVec);
+    }
+
+    /**
+     * Offensive web trap: In Rage chunks, spiders place webs in the player's escape path
+     * (the direction the player is facing/running toward) to block retreat.
+     * Gated by a 5s per-spider cooldown.
+     */
+    private void attemptOffensiveWeb(Spider spider, Player target) {
+        UUID id = spider.getUniqueId();
+        long now = System.currentTimeMillis();
+        if (now - offensiveWebCooldowns.getOrDefault(id, 0L) < OFFENSIVE_WEB_COOLDOWN_MS) return;
+        offensiveWebCooldowns.put(id, now);
+
+        // Place web 1.5 blocks ahead in the player's facing direction
+        Vector escapeDir = target.getLocation().getDirection().setY(0).normalize();
+        Location webLoc = target.getLocation().clone().add(escapeDir.multiply(1.5));
+        Block webBlock = webLoc.getBlock();
+
+        if (webBlock.getType() != Material.AIR || pendingWebCleanups.contains(webLoc)) return;
+
+        webBlock.setType(Material.COBWEB);
+        pendingWebCleanups.add(webLoc);
+
+        // Auto-remove after 3 seconds (shorter than defensive webs — 60 ticks)
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (webBlock.getType() == Material.COBWEB) {
+                webBlock.setType(Material.AIR);
+            }
+            pendingWebCleanups.remove(webLoc);
+        }, 60L);
     }
 }

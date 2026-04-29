@@ -197,23 +197,15 @@ public class SkeletonHandler {
         if (now - torchSnuffCooldowns.getOrDefault(id, 0L) < TORCH_SNUFF_COOLDOWN_MS) return;
         torchSnuffCooldowns.put(id, now);
 
-        Location loc = skeleton.getLocation();
-        for (int x = -3; x <= 3; x++) {
-            for (int y = -2; y <= 2; y++) {
-                for (int z = -3; z <= 3; z++) {
-                    Block b = loc.clone().add(x, y, z).getBlock();
-                    if (b.getType() == Material.TORCH || b.getType() == Material.WALL_TORCH) {
-                        if (skeleton.getLocation().distanceSquared(b.getLocation()) < 2.25) {
-                            b.breakNaturally();
-                            skeleton.swingMainHand();
-                            b.getWorld().playSound(b.getLocation(), b.getBlockData().getSoundGroup().getBreakSound(), 1.0f, 1.0f);
-                        } else {
-                            skeleton.getPathfinder().moveTo(b.getLocation());
-                        }
-                        return;
-                    }
-                }
-            }
+        Block torch = MobUtil.findNearestTorch(skeleton, 3);
+        if (torch == null) return;
+
+        if (skeleton.getLocation().distanceSquared(torch.getLocation()) < 2.25) {
+            torch.breakNaturally();
+            skeleton.swingMainHand();
+            torch.getWorld().playSound(torch.getLocation(), torch.getBlockData().getSoundGroup().getBreakSound(), 1.0f, 1.0f);
+        } else {
+            skeleton.getPathfinder().moveTo(torch.getLocation());
         }
     }
 }
