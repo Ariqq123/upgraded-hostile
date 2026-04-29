@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="assets/antigravity_logo.png" width="200" alt="AntiGravity Logo">
+</p>
+
+# UpgradedHostile
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1+-green?style=for-the-badge&logo=minecraft&logoColor=white)
