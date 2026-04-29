@@ -8,6 +8,16 @@
     <artifactId>upgradedhostile</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
+    <name>UpgradedHostile</name>
+    <description>Makes hostile mobs smarter and more dangerous.</description>
+    <url>https://github.com/azreyzaako/upgraded-hostile</url>
+
+    <developers>
+        <developer>
+            <id>azreyzaako</id>
+            <name>azreyzaako</name>
+        </developer>
+    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

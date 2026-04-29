@@ -2,6 +2,7 @@ package com.antigravity.upgradedhostile;
 
 import com.antigravity.upgradedhostile.handlers.*;
 import com.antigravity.upgradedhostile.listeners.BleedListener;
+import com.antigravity.upgradedhostile.listeners.DrownedListener;
 import com.antigravity.upgradedhostile.listeners.EvolutionListener;
 import com.antigravity.upgradedhostile.managers.BleedManager;
 import com.antigravity.upgradedhostile.managers.EvolutionManager;
@@ -14,6 +15,11 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 
+/**
+ * UpgradedHostile — A Minecraft plugin for smarter hostile mobs.
+ *
+ * @author azreyzaako
+ */
 public class UpgradedHostile extends JavaPlugin {
 
     private BukkitTask dispatcherTask;
@@ -65,6 +71,7 @@ public class UpgradedHostile extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BleedListener(this, bleedManager, config), this);
         getServer().getPluginManager().registerEvents(new EvolutionListener(evolutionManager, this), this);
         getServer().getPluginManager().registerEvents(new ControlGUI(this), this);
+        // DrownedListener will be registered after handler creation below
 
         boolean zombieEnabled = config.getBoolean("zombie.enabled", true);
         boolean creeperEnabled = config.getBoolean("creeper.enabled", true);
@@ -73,6 +80,7 @@ public class UpgradedHostile extends JavaPlugin {
         boolean phantomEnabled = config.getBoolean("phantom.enabled", true);
         boolean endermanEnabled = config.getBoolean("enderman.enabled", true);
         boolean witchEnabled = config.getBoolean("witch.enabled", true);
+        boolean drownedEnabled = config.getBoolean("drowned.enabled", true);
 
         // Create handlers
         ZombieHandler zombieHandler = new ZombieHandler(this, config, bleedManager, evolutionManager);
@@ -82,13 +90,17 @@ public class UpgradedHostile extends JavaPlugin {
         PhantomHandler phantomHandler = new PhantomHandler(config);
         EndermanHandler endermanHandler = new EndermanHandler(config);
         WitchHandler witchHandler = new WitchHandler(config);
+        DrownedHandler drownedHandler = new DrownedHandler(this, config, evolutionManager);
+
+        // Register Drowned Listener
+        getServer().getPluginManager().registerEvents(new DrownedListener(drownedHandler), this);
 
         // Single consolidated dispatcher — one entity scan for all mob types
         MobAIDispatcher dispatcher = new MobAIDispatcher(
                 this, zombieHandler, creeperHandler, skeletonHandler,
-                spiderHandler, phantomHandler, endermanHandler, witchHandler,
+                spiderHandler, phantomHandler, endermanHandler, witchHandler, drownedHandler,
                 zombieEnabled, creeperEnabled, skeletonEnabled,
-                spiderEnabled, phantomEnabled, endermanEnabled, witchEnabled
+                spiderEnabled, phantomEnabled, endermanEnabled, witchEnabled, drownedEnabled
         );
 
         // Run every 5 ticks (0.25s) — internal rate limiting handles slower mobs
@@ -102,6 +114,7 @@ public class UpgradedHostile extends JavaPlugin {
         if (phantomEnabled) enabledCount++;
         if (endermanEnabled) enabledCount++;
         if (witchEnabled) enabledCount++;
+        if (drownedEnabled) enabledCount++;
 
         getLogger().info("UpgradedHostile has been enabled! (" + enabledCount + " mob AIs active)");
     }

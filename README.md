@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/antigravity_logo.png" width="200" alt="AntiGravity Logo">
+  <img src="https://antigravity.google/assets/image/brand/antigravity_product_lockup_full_color.png" width="400" alt="AntiGravity Logo">
 </p>
 
 # UpgradedHostile
@@ -9,7 +9,7 @@
 ![Paper](https://img.shields.io/badge/Paper_API-1.20.1-orange?style=for-the-badge)
 ![Java](https://img.shields.io/badge/Java-17+-red?style=for-the-badge&logo=openjdk&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-purple?style=for-the-badge)
-![Mobs](https://img.shields.io/badge/upgraded_mobs-7-yellow?style=for-the-badge)
+![Mobs](https://img.shields.io/badge/upgraded_mobs-8-yellow?style=for-the-badge)
 ![Made with AntiGravity](https://img.shields.io/badge/Made%20with-AntiGravity-blueviolet?style=for-the-badge&logo=googlecloud&logoColor=white)
 
 A Minecraft Paper plugin that makes hostile mobs smarter and more dangerous. Each mob type gets unique tactical AI that goes far beyond vanilla behavior.
@@ -66,6 +66,14 @@ Witches become dangerous kiting fighters:
 - **Self-Heal Priority**: Drinks healing potions more aggressively when below 50% health
 - **Fire Resistance**: Automatically applies fire resistance when on fire
 
+### 🔱 Drowned — Harpoon Predator
+Drowned use their tridents as lethal harpoons to catch prey:
+- **Harpoon Pull**: When hitting a player with a **Loyalty Trident**, a harpoon link is established.
+- **Drag to Depths**: If the player is on land, they are forcibly dragged into the water.
+- **Torpedo Dash**: If the player is in water, the Drowned zips toward them for a melee strike.
+- **Evolution Gated**: Only triggers in High Evolution chunks (min 0.4).
+- **Visuals**: Bubble and wake particles trail the harpoon hit.
+
 ## Installation
 
 1. Download `upgradedhostile-1.0.0.jar` from the `target/` directory.
@@ -87,6 +95,7 @@ Every mob can be **individually enabled/disabled** and all behavior parameters a
 | Phantom | `phantom.enabled` | `true` |
 | Enderman | `enderman.enabled` | `true` |
 | Witch | `witch.enabled` | `true` |
+| Drowned | `drowned.enabled` | `true` |
 
 See `config.yml` for the full list of tunable parameters per mob.
 
@@ -104,4 +113,4 @@ mvn clean package
 The compiled JAR will be in `target/upgradedhostile-1.0.0.jar`.
 
 ---
-Made with ❤️ by **AntiGravity**
+Authored by **azreyzaako** — Made with ❤️ using AntiGravity

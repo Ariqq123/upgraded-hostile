@@ -130,3 +130,14 @@ witch:
   normal-speed: 0.25
   # Health threshold below which witch prioritizes self-healing
   heal-health-threshold: 13.0
+
+# --- Drowned Harpoon Predator ---
+drowned:
+  enabled: true
+  check-interval-ticks: 10
+  # Cooldown between harpoon pulls (ms)
+  harpoon-cooldown-ms: 12000
+  # Minimum evolution factor required for harpoon usage (0.0 to 1.0)
+  min-evolution-factor: 0.4
+  # Multiplier for the pull velocity
+  pull-strength: 0.3

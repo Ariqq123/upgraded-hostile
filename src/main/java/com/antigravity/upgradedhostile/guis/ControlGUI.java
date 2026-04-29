@@ -35,6 +35,7 @@ public class ControlGUI implements Listener {
     private static final int SLOT_EVOLUTION = 48;
     private static final int SLOT_JOCKEY = 49;
     private static final int SLOT_SNUFF = 50;
+    private static final int SLOT_DROWNED = 25;
 
     public static void open(UpgradedHostile plugin, Player player) {
         Inventory inv = Bukkit.createInventory(null, 54, TITLE);
@@ -59,6 +60,7 @@ public class ControlGUI implements Listener {
         inv.setItem(SLOT_PHANTOM, createToggleItem(Material.PHANTOM_MEMBRANE, "Phantom AI", config.getBoolean("phantom.enabled", true)));
         inv.setItem(SLOT_ENDERMAN, createToggleItem(Material.ENDER_PEARL, "Enderman AI", config.getBoolean("enderman.enabled", true)));
         inv.setItem(SLOT_WITCH, createToggleItem(Material.GLASS_BOTTLE, "Witch AI", config.getBoolean("witch.enabled", true)));
+        inv.setItem(SLOT_DROWNED, createToggleItem(Material.HEART_OF_THE_SEA, "Drowned AI", config.getBoolean("drowned.enabled", true)));
         inv.setItem(SLOT_DEBUG, createToggleItem(Material.REDSTONE, "Debug Mode", config.getBoolean("general.debug", false)));
         
         inv.setItem(SLOT_EVOLUTION, createToggleItem(Material.NETHER_STAR, "Evolution System", config.getBoolean("general.evolution-enabled", true)));
@@ -118,6 +120,9 @@ public class ControlGUI implements Listener {
             toggled = true;
         } else if (slot == SLOT_WITCH) {
             config.set("witch.enabled", !config.getBoolean("witch.enabled", true));
+            toggled = true;
+        } else if (slot == SLOT_DROWNED) {
+            config.set("drowned.enabled", !config.getBoolean("drowned.enabled", true));
             toggled = true;
         } else if (slot == SLOT_DEBUG) {
             config.set("general.debug", !config.getBoolean("general.debug", false));

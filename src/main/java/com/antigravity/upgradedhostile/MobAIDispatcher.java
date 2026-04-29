@@ -31,6 +31,7 @@ public class MobAIDispatcher extends BukkitRunnable {
     private final PhantomHandler phantomHandler;
     private final EndermanHandler endermanHandler;
     private final WitchHandler witchHandler;
+    private final DrownedHandler drownedHandler;
 
     private final boolean zombieEnabled;
     private final boolean creeperEnabled;
@@ -39,6 +40,7 @@ public class MobAIDispatcher extends BukkitRunnable {
     private final boolean phantomEnabled;
     private final boolean endermanEnabled;
     private final boolean witchEnabled;
+    private final boolean drownedEnabled;
 
     // Tick counter for handlers that run at slower rates
     private int tickCount = 0;
@@ -63,13 +65,15 @@ public class MobAIDispatcher extends BukkitRunnable {
             PhantomHandler phantomHandler,
             EndermanHandler endermanHandler,
             WitchHandler witchHandler,
+            DrownedHandler drownedHandler,
             boolean zombieEnabled,
             boolean creeperEnabled,
             boolean skeletonEnabled,
             boolean spiderEnabled,
             boolean phantomEnabled,
             boolean endermanEnabled,
-            boolean witchEnabled
+            boolean witchEnabled,
+            boolean drownedEnabled
     ) {
         this.plugin = plugin;
         this.zombieHandler = zombieHandler;
@@ -79,6 +83,7 @@ public class MobAIDispatcher extends BukkitRunnable {
         this.phantomHandler = phantomHandler;
         this.endermanHandler = endermanHandler;
         this.witchHandler = witchHandler;
+        this.drownedHandler = drownedHandler;
         this.zombieEnabled = zombieEnabled;
         this.creeperEnabled = creeperEnabled;
         this.skeletonEnabled = skeletonEnabled;
@@ -86,6 +91,7 @@ public class MobAIDispatcher extends BukkitRunnable {
         this.phantomEnabled = phantomEnabled;
         this.endermanEnabled = endermanEnabled;
         this.witchEnabled = witchEnabled;
+        this.drownedEnabled = drownedEnabled;
     }
 
     @Override
@@ -133,6 +139,7 @@ public class MobAIDispatcher extends BukkitRunnable {
             if (phantomEnabled) phantomHandler.cleanup();
             if (endermanEnabled) endermanHandler.cleanup();
             if (witchEnabled) witchHandler.cleanup();
+            if (drownedEnabled) drownedHandler.cleanup();
         }
 
         long endTime = System.nanoTime();
@@ -157,6 +164,8 @@ public class MobAIDispatcher extends BukkitRunnable {
             endermanHandler.handle(enderman);
         } else if (witchEnabled && isSlowTick && entity instanceof Witch witch) {
             witchHandler.handle(witch);
+        } else if (drownedEnabled && isSlowTick && entity instanceof Drowned drowned) {
+            drownedHandler.handle(drowned);
         }
     }
 }
